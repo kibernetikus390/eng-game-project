@@ -52,15 +52,35 @@ function TestWiktionaryAPI() {
 		);
 		console.log(doc);
 		const $doc = $(doc);
-		// 説明文の中にdd,dl要素(類義語等)があり、後々邪魔なので削除しておく
-		$doc.find("dd").remove();
-		let definition:string = "";
+
+		// English以降のH2と以降の要素を削除する。（他言語の定義をヒットさせないため）
+		let deleteNextH2:boolean = false;
+		let deletedH2:boolean = false;
+		let foundEnglishH2:boolean = false;
+		$doc.find('h2').each((i,e)=>{
+			if(deletedH2) return;
+			console.log(i,e)
+			if( deleteNextH2 ){
+				// console.log("deleted h2")
+				$(e).nextAll().addBack().remove();
+				deletedH2 = true;
+				return;
+			}
+			if( $(e).data("mw-anchor") == "English" ){
+				// console.log("eng")
+				deleteNextH2 = true;
+				foundEnglishH2 = true;
+			}
+		});
 		
 		// この要素が存在しなければ、辞書に載っていない
-		if ($doc.find(`h2[data-mw-anchor="English"]`).length == 0) {
+		if ( !foundEnglishH2 ) {
 			alert(`Any english definition not found. (${title})`);
 			return;
 		}
+		
+		// 説明文の中にdd,dl要素(類義語等)があると後々邪魔なので削除しておく
+		$doc.find("dd").remove();
 		
 		// 捜索する品詞
 		let partsToSearch:string[] = [];
@@ -86,6 +106,7 @@ function TestWiktionaryAPI() {
 			partsToSearch = [part];
 		} 
 		
+		let definition:string = "";
 		let newQuiz:Quiz[] = [];
 		let i = 0;
 		while (definition == "" && i < partsToSearch.length) {
