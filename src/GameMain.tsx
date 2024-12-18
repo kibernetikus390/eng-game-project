@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import $ from "jquery";
 
 type Dictionary = {
@@ -14,14 +14,28 @@ function GameMain() {
     const [loadingCounter, setLoadingCounter] = useState<number>(0);
     // ゲーム進行中
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    // ゲーム進度
+    const [gameIndex, setGameIndex] = useState<number>(-1);
     // 出題数
     const [numWords, setNumWords] = useState<number>(10);
     // 出題リスト
     const [quizSet, setQuizSet] = useState<Dictionary[]>([]);
-    // 選択肢用の追加のquizSet
+    // 選択肢用の追加の出題リスト
     const [extraSet, setExtraSet] = useState<Dictionary[]>([]);
     // ↑の数。とりあえず定数で
     const numExtraQuizSet = 4;
+    // 選択肢
+    const [options, setOptions] = useState<Dictionary[]>([]);
+    // 正答
+    const [correctOptionIndex, setCorrectOptionIndex] = useState<number>(0);
+
+    function handleClickOption( index:number ){
+        if( index == correctOptionIndex ){
+            console.log("correct");
+        }else{
+            console.log("wrong");
+        }
+    }
 
     async function handleClickStart() {
         console.log(`clicked start button: numWords=${numWords}`);
@@ -34,12 +48,15 @@ function GameMain() {
             // 選択肢用の追加リスト
             let newExtraSet = await generateDictionary(numExtraQuizSet, setLoadingCounter);
             setExtraSet(()=>[...newExtraSet]);
+            // 選択肢テスト
+            //generateOptions(newQuizSet, newExtraSet);
         } catch(error) {
             alert(error);
             window.location.reload();
         }
         setLoading(false);
         setIsPlaying(true);
+        setGameIndex(0);
     }
 
     async function generateDictionary( num:number, setCounter:any=undefined ){
@@ -145,6 +162,7 @@ function GameMain() {
 				"Determiner",
 				"Interjection",
 				"Noun",
+				"Numeral",
 				"Particle",
 				"Preposition",
 				"Pronoun",
@@ -172,7 +190,7 @@ function GameMain() {
                 if( definition != "" ){
                     return;
                 }
-                let txt = $(val).text().trim();
+                let txt = $(val).text().split(/\[/)[0].trim();
                 if(txt == ""){
                     return;
                 }
@@ -188,6 +206,31 @@ function GameMain() {
         return {title:title, part:foundPart, definition:definition};
     }
 
+    useEffect(()=>{
+        if(gameIndex == -1){
+            return;
+        }
+        // 選択肢を生成
+        let allSet:Dictionary[] = [...quizSet, ...extraSet];
+        let newOptions:Dictionary[] = [];
+        for(let i = 0; i < 4; i++){
+            newOptions.push(
+                allSet.splice(Math.floor(Math.random() * allSet.length), 1)[0]
+            );
+        }
+        // 正答を挿入
+        let ansIndex = newOptions.findIndex((e)=> e.title == quizSet[gameIndex].title);
+        if( ansIndex == -1 ){
+            let newIndex:number = Math.floor( Math.random() * 4 );
+            newOptions[ newIndex ] = quizSet[gameIndex];
+            setCorrectOptionIndex(newIndex);
+        } else {
+            setCorrectOptionIndex(ansIndex);
+        }
+        console.log(newOptions);
+        setOptions(newOptions);
+    },[gameIndex]);
+
     return (
         <>
             {
@@ -200,25 +243,16 @@ function GameMain() {
                 :
                 isPlaying ?
                 <>
-                    <h2>Quiz Set</h2>
-                    {quizSet.map((v,i)=>{
-                        return (
-                            <div key={i}>
-                                <h2>{v.title}</h2>
-                                <p>{`${v.part} : ${v.definition}`}</p>
-                            </div>
-                        )
-                    })}
-                    <hr/>
-                    <h3>Extra Set for generating options</h3>
-                    {extraSet.map((v,i)=>{
-                        return (
-                            <div key={i}>
-                                <h4>{v.title}</h4>
-                                <h5>{`${v.part} : ${v.definition}`}</h5>
-                            </div>
-                        )
-                    })}
+                    <h2>{quizSet[0].title}</h2>
+                    {
+                        options.map((v,i)=>{
+                            return (
+                                <div key={i}>
+                                    <p key={i} onClick={()=>{handleClickOption(i)}}>{`${v.part} : ${v.definition}`}</p>
+                                </div>
+                            )
+                        })
+                    }
                 </>
                 :
                 <>

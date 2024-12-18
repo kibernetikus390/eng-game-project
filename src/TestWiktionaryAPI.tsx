@@ -24,7 +24,7 @@ function TestWiktionaryAPI() {
 			if( definition != "" ){
 				return;
 			}
-			let txt = $(val).text().trim();
+			let txt = $(val).text().split(/\[/)[0].trim();
 			if(/*txt.match(/^\(.*\)$/g) ||*/ txt == "" ){
 				// console.log("skip");
 				return;
@@ -99,6 +99,7 @@ function TestWiktionaryAPI() {
 				"Determiner",
 				"Interjection",
 				"Noun",
+				"Numeral",
 				"Particle",
 				"Preposition",
 				"Pronoun",
@@ -168,6 +169,7 @@ function TestWiktionaryAPI() {
 				<option value="Determiner">Determiner</option>
 				<option value="Interjection">Interjection</option>
 				<option value="Noun">Noun</option>
+				<option value="Numeral">Numeral</option>
 				<option value="Particle">Particle</option>
 				<option value="Preposition">Preposition</option>
 				<option value="Pronoun">Pronoun</option>
