@@ -83,8 +83,8 @@ function TestWiktionaryAPI() {
 		
 		// 説明文の中にdd,dl要素(類義語等)があると後々邪魔なので削除しておく
 		$doc.find("dd").remove();
-		// ol > li 内にまた ol > liが登場することがある(用途の限定など)
-		$doc.find("li>ol").remove();
+		// リスト内にまたリストが登場することがある(用途の限定など)
+		$doc.find("li ol, li ul").remove();
 		
 		// 捜索する品詞
 		let partsToSearch:string[] = [];
@@ -94,11 +94,13 @@ function TestWiktionaryAPI() {
 				getAllPart = true;
 			}
 			let partsList = [
-				"Noun",
 				"Adjective",
 				"Adverb",
-				"Preposition",
+				"Determiner",
 				"Interjection",
+				"Noun",
+				"Particle",
+				"Preposition",
 				"Verb",
 			];
 			while (partsList.length > 0) {
@@ -115,42 +117,12 @@ function TestWiktionaryAPI() {
 		let i = 0;
 		while (definition == "" && i < partsToSearch.length) {
 			console.log("searchin: " + partsToSearch[i]);
-			switch (partsToSearch[i]) {
-				case "Noun":
-					part = "Noun";
-					definition = getDefinitionPart($doc, "Noun", title, getAllPart);
-					console.log(`Noun: ${definition}`);
-					break;
-				case "Adjective":
-					part = "Adjective";
-					definition = getDefinitionPart($doc, "Adjective", title, getAllPart);
-					console.log(`Adjective: ${definition}`);
-					break;
-				case "Adverb":
-					part = "Adverb";
-					definition = getDefinitionPart($doc, "Adverb", title, getAllPart);
-					console.log(`Adverb: ${definition}`);
-					break;
-				case "Preposition":
-					part = "Preposition";
-					definition = getDefinitionPart($doc, "Preposition", title, getAllPart);
-					console.log(`Preposition: ${definition}`);
-					break;
-				case "Interjection":
-					part = "Interjection";
-					definition = getDefinitionPart($doc, "Interjection", title, getAllPart);
-					console.log(`Intr: ${definition}`);
-					break;
-				case "Verb":
-					part = "Verb";
-					definition = getDefinitionPart($doc, "Verb", title, getAllPart);
-					console.log(`Verb: ${definition}`);
-					break;
-				default:
-				definition = "Error: undefined part";
-			}
+			
+			definition = getDefinitionPart($doc, partsToSearch[i], title, getAllPart);
+			console.log(`${partsToSearch[i]}: ${definition}`);
+
 			if(definition != "") {
-				newQuiz.push({title:title, part:part, definition:definition});
+				newQuiz.push({title:title, part:partsToSearch[i], definition:definition});
 				if(getAllPart) {
 					definition = "";
 				}
@@ -172,7 +144,7 @@ function TestWiktionaryAPI() {
 			{quiz.map((o, i) => {
 				return (
 					<div key={`quiz[${i}]`}>
-						<h1 key={`${i}.title`}>{o.title}</h1>
+						{(i == 0) ? <h1 key={`${i}.title`}>{o.title}</h1> : null }
 						<p key={`${i}.definition`}>{`${o.part}: ${o.definition}`}</p>
 					</div>
 				);
@@ -192,8 +164,10 @@ function TestWiktionaryAPI() {
 				<option value="Random">*Random</option>
 				<option value="Adjective">Adjective</option>
 				<option value="Adverb">Adverb</option>
+				<option value="Determiner">Determiner</option>
 				<option value="Interjection">Interjection</option>
 				<option value="Noun">Noun</option>
+				<option value="Particle">Particle</option>
 				<option value="Preposition">Preposition</option>
 				<option value="Verb">Verb</option>
 			</select>
