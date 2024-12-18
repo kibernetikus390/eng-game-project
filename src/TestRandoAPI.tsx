@@ -3,7 +3,7 @@ import $ from "jquery";
 
 function TestRandoAPI() {
     const [words, setWords] = useState<string[]>([]);
-    const [numWords, setNumWords] = useState(10);
+    const [numWords, setNumWords] = useState<number>(10);
 
     function handleSubmit(){
         console.log("clicked. num:"+numWords);
@@ -26,7 +26,7 @@ function TestRandoAPI() {
     return (
         <>
             <h1>Rando API Test</h1>
-            <input type="number" value={numWords} onChange={(e)=>setNumWords(e.target.value)}/>
+            <input type="number" value={numWords} onChange={(e)=>setNumWords(Number(e.target.value))}/>
             <input type="submit" value="Fetch" onClick={handleSubmit}/>
             {
                 words.map((v,i)=>{

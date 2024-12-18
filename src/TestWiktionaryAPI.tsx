@@ -19,18 +19,18 @@ function TestWiktionaryAPI() {
 			return "";
 		}
 		// テキスト部分を取得
-		definition = $doc.find(`[data-mw-anchor="${part}"]`).next().next().children().first().text().trim();
-		// $doc.find(`[data-mw-anchor="${part}"]`).next().next().find(`li`).each(function(index,val){
-		// 	if( definition != "" ){
-		// 		return;
-		// 	}
-		// 	let txt = $(val).text().trim();
-		// 	if(/*txt.match(/^\(.*\)$/g) ||*/ txt == "" ){
-		// 		// console.log("skip");
-		// 		return;
-		// 	}
-		// 	definition = txt;
-		// });
+		//definition = $doc.find(`[data-mw-anchor="${part}"]`).next().next().children().first().text().trim();
+		$doc.find(`[data-mw-anchor="${part}"]`).next().next().children().each(function(index,val){
+			if( definition != "" ){
+				return;
+			}
+			let txt = $(val).text().trim();
+			if(/*txt.match(/^\(.*\)$/g) ||*/ txt == "" ){
+				// console.log("skip");
+				return;
+			}
+			definition = txt;
+		});
 		if(definition == ""){
 			console.log(part + ": definition found, but failed to clip certain information.");
 			return "";
@@ -101,6 +101,7 @@ function TestWiktionaryAPI() {
 				"Noun",
 				"Particle",
 				"Preposition",
+				"Pronoun",
 				"Verb",
 			];
 			while (partsList.length > 0) {
@@ -134,7 +135,7 @@ function TestWiktionaryAPI() {
 	};
 	
 	function handleClick(e: React.MouseEvent<HTMLInputElement>) {
-		// console.log("clicked on : " + e.target);
+		console.log("clicked on : " + e.target);
 		// console.log(`title:${title} part:${part}`);
 		fetchTest(title, part);
 	}
@@ -169,6 +170,7 @@ function TestWiktionaryAPI() {
 				<option value="Noun">Noun</option>
 				<option value="Particle">Particle</option>
 				<option value="Preposition">Preposition</option>
+				<option value="Pronoun">Pronoun</option>
 				<option value="Verb">Verb</option>
 			</select>
 			<input type="submit" value="送信" onClick={handleClick} />
