@@ -18,17 +18,19 @@ function TestWiktionaryAPI() {
 			if(!getAllPart) alert(`no definition exist {title:${title}, part:${part}}`);
 			return "";
 		}
-		$doc.find(`[data-mw-anchor="${part}"]`).next().next().find(`li`).each(function(index,val){
-			if( definition != "" ){
-				return;
-			}
-			let txt = $(val).text().trim();
-			if(/*txt.match(/^\(.*\)$/g) ||*/ txt == "" ){
-				// console.log("skip");
-				return;
-			}
-			definition = txt;
-		});
+		// テキスト部分を取得
+		definition = $doc.find(`[data-mw-anchor="${part}"]`).next().next().children().first().text().trim();
+		// $doc.find(`[data-mw-anchor="${part}"]`).next().next().find(`li`).each(function(index,val){
+		// 	if( definition != "" ){
+		// 		return;
+		// 	}
+		// 	let txt = $(val).text().trim();
+		// 	if(/*txt.match(/^\(.*\)$/g) ||*/ txt == "" ){
+		// 		// console.log("skip");
+		// 		return;
+		// 	}
+		// 	definition = txt;
+		// });
 		if(definition == ""){
 			console.log(part + ": definition found, but failed to clip certain information.");
 			return "";
@@ -81,6 +83,8 @@ function TestWiktionaryAPI() {
 		
 		// 説明文の中にdd,dl要素(類義語等)があると後々邪魔なので削除しておく
 		$doc.find("dd").remove();
+		// ol > li 内にまた ol > liが登場することがある(用途の限定など)
+		$doc.find("li>ol").remove();
 		
 		// 捜索する品詞
 		let partsToSearch:string[] = [];
