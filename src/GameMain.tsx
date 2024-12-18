@@ -12,29 +12,44 @@ function GameMain() {
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [numWords, setNumWords] = useState<number>(10);
     const [quizSet, setQuizSet] = useState<Dictionary[]>([]);
+    const [loadingCounter, setLoadingCounter] = useState<number>(0);
 
     async function handleClickStart() {
         console.log(`clicked start button: numWords=${numWords}`);
         setLoading(true);
+        setLoadingCounter(0);
         try{
-            let fetchedWords:string[] = await fetchRandomWords(numWords);
-            setQuizSet([]);
-            for(let i = 0; i < fetchedWords.length; i++){
-                let $doc:JQuery<Document> = await fetchWiktionary(fetchedWords[i]);
-                let newQuiz:Dictionary = getDefinition( $doc, fetchedWords[i] );
-                console.log(newQuiz);
-                if(newQuiz.definition == ""){
-                    // definitionをフェッチできなかった
-                    throw new Error(`Failed to fetch definition. ${fetchedWords[i]}`);
-                }
-                setQuizSet((previous)=>[...previous, newQuiz]);
-            }
+            let newQuizSet = await generateDictionary(numWords, setLoadingCounter);
+            setQuizSet(()=>[...newQuizSet]);
         } catch(error) {
             alert(error);
             window.location.reload();
         }
         setLoading(false);
         setIsPlaying(true);
+    }
+
+    async function generateDictionary( num:number, setCounter:any=undefined ){
+        try{
+            let fetchedWords:string[] = await fetchRandomWords(num);
+            let newQuizSet:Dictionary[] = [];
+            for(let i = 0; i < fetchedWords.length; i++){
+                let $doc:JQuery<Document> = await fetchWiktionary(fetchedWords[i]);
+                let newQuiz:Dictionary = getDefinition( $doc, fetchedWords[i] );
+                console.log(newQuiz);
+                if(newQuiz.definition == ""){
+                    // definitionをフェッチできなかった 別の単語で再取得処理を入れる
+                    throw new Error(`Failed to fetch definition. ${fetchedWords[i]}`);
+                }
+                newQuizSet.push(newQuiz);
+                if(setCounter != undefined){
+                    (setCounter as React.Dispatch<React.SetStateAction<number>>)((prev)=>prev+1);
+                }
+            }
+            return newQuizSet;
+        }catch(error){
+            throw error;
+        }
     }
 
     async function fetchRandomWords( num:number ){
@@ -166,7 +181,7 @@ function GameMain() {
                 loading ?
                 <>
                     <p>loading...</p>
-                    <p>{`${quizSet.length} / ${numWords}`}</p>
+                    <p>{`${loadingCounter} / ${numWords}`}</p>
                 </>
                 :
                 isPlaying ?
