@@ -8,19 +8,32 @@ type Dictionary = {
 };
 
 function GameMain() {
+    // ロード中
     const [loading, setLoading] = useState<boolean>(false);
-    const [isPlaying, setIsPlaying] = useState<boolean>(false);
-    const [numWords, setNumWords] = useState<number>(10);
-    const [quizSet, setQuizSet] = useState<Dictionary[]>([]);
+    // ローディング進度
     const [loadingCounter, setLoadingCounter] = useState<number>(0);
+    // ゲーム進行中
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    // 出題数
+    const [numWords, setNumWords] = useState<number>(10);
+    // 出題リスト
+    const [quizSet, setQuizSet] = useState<Dictionary[]>([]);
+    // 選択肢用の追加のquizSet
+    const [extraSet, setExtraSet] = useState<Dictionary[]>([]);
+    // ↑の数。とりあえず定数で
+    const numExtraQuizSet = 4;
 
     async function handleClickStart() {
         console.log(`clicked start button: numWords=${numWords}`);
         setLoading(true);
         setLoadingCounter(0);
         try{
+            // 出題リスト
             let newQuizSet = await generateDictionary(numWords, setLoadingCounter);
             setQuizSet(()=>[...newQuizSet]);
+            // 選択肢用の追加リスト
+            let newExtraSet = await generateDictionary(numExtraQuizSet, setLoadingCounter);
+            setExtraSet(()=>[...newExtraSet]);
         } catch(error) {
             alert(error);
             window.location.reload();
@@ -115,7 +128,7 @@ function GameMain() {
             
             return $doc;
         } catch(error) {
-            alert("Failed to fetch from Wiktionary (title:${title}) :" + error);
+            alert(`Failed to fetch from Wiktionary (title:${title}) : + ${error}`);
             throw error;
         }
     }
@@ -181,17 +194,28 @@ function GameMain() {
                 loading ?
                 <>
                     <p>loading...</p>
-                    <p>{`${loadingCounter} / ${numWords}`}</p>
+                    <p>{`quizSet: ${Math.min(numWords,loadingCounter)} / ${numWords}`}</p>
+                    <p>{`extraSet: ${Math.max(0,loadingCounter-numWords)} / ${numExtraQuizSet}`}</p>
                 </>
                 :
                 isPlaying ?
                 <>
-                    <p>main</p>
+                    <h2>Quiz Set</h2>
                     {quizSet.map((v,i)=>{
                         return (
                             <div key={i}>
                                 <h2>{v.title}</h2>
                                 <p>{`${v.part} : ${v.definition}`}</p>
+                            </div>
+                        )
+                    })}
+                    <hr/>
+                    <h3>Extra Set for generating options</h3>
+                    {extraSet.map((v,i)=>{
+                        return (
+                            <div key={i}>
+                                <h4>{v.title}</h4>
+                                <h5>{`${v.part} : ${v.definition}`}</h5>
                             </div>
                         )
                     })}
