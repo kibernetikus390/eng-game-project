@@ -8,11 +8,6 @@ type Dictionary = {
 	definition: string;
 };
 
-// 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
-const ADD_LS_QUIZ:boolean = true;
-// 出題に、ローカルストレージにキャッシュした問題を使う
-const USE_LS_QUIZ:boolean = true;
-
 function GameMain() {
     // ステート：ロード中
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -69,16 +64,15 @@ function GameMain() {
     }
 
     // スタートボタンのクリックイベント
-    async function handleClickStart() {
-        console.log(`clicked start button: numWords=${numWords}`);
+    async function handleClickStart(num:number) {
         setIsLoading(true);
         setLoadingCounter(0);
+        let newQuizSet:Dictionary[] = [];
+        let newExtraSet:Dictionary[] = [];
         
-        if(USE_LS_QUIZ){
+        if(import.meta.env.VITE_USE_LS_QUIZ){
             // クイズをローカルストレージから生成する
             // フェッチに時間がかかるので今のところテスト用
-            let newQuizSet:Dictionary[] = [];
-            let newExtraSet:Dictionary[] = [];
             let cacheString = localStorage.getItem("quizCache");
             // 異常：ローカルストレージが空
             if( cacheString == null ){
@@ -88,12 +82,12 @@ function GameMain() {
             }
             let cache = JSON.parse(cacheString).flat();
             // 異常：キャッシュされた問題数が足りない
-            if( cache.length < numWords + numExtraQuizSet){
+            if( cache.length < num + numExtraQuizSet){
                 alert( `localStorage(quizCache) is null` );
                 reload();
                 return;
             }
-            for(let i = 0; i < numWords; i++){
+            for(let i = 0; i < num; i++){
                 newQuizSet.push(
                     cache.splice(Math.floor(Math.random() * cache.length), 1)[0]
                 );
@@ -109,10 +103,10 @@ function GameMain() {
             // クイズをWebAPIから生成
             try{
                 // 出題リスト
-                let newQuizSet:Dictionary[] = await generateQuizSet(numWords, setLoadingCounter);
+                newQuizSet = await generateQuizSet(num, setLoadingCounter);
                 setQuizSet(()=>[...newQuizSet]);
                 // 選択肢用の追加リスト
-                let newExtraSet:Dictionary[] = await generateQuizSet(numExtraQuizSet, setLoadingCounter);
+                newExtraSet = await generateQuizSet(numExtraQuizSet, setLoadingCounter);
                 setExtraSet(()=>[...newExtraSet]);
             } catch(error) {
                 alert(error);
@@ -123,12 +117,12 @@ function GameMain() {
         setIsLoading(false);
         setIsPlaying(true);
         setGameIndex(0);
-        initTfTable();
+        initTfTable(newQuizSet.length);
     }
 
     // 正誤表を初期化
-    function initTfTable( ) {
-        let newTfTable:boolean[] = Array(numWords).fill(false);
+    function initTfTable( num:number ) {
+        let newTfTable:boolean[] = Array(num).fill(false);
         setTfTable(newTfTable);
     }
 
@@ -162,7 +156,7 @@ function GameMain() {
                     throw new Error(`Failed to fetch definition. ${fetchedWords[i]}`);
                 }
                 newQuizSet.push(newQuiz);
-                if(ADD_LS_QUIZ){
+                if(import.meta.env.VITE_ADD_LS_QUIZ){
                     addQuizCache(newQuiz);
                 }
                 // ローディング進捗表示用のカウンター
@@ -303,9 +297,9 @@ function GameMain() {
 
     // ゲーム進行時イベント　選択肢を生成する
     useEffect(()=>{
-        if(gameIndex == -1 || isResult){
+        if(gameIndex == -1 || isResult || gameIndex >= quizSet.length){
             return;
-        }
+        }   
         // 選択肢を生成
         let allSet:Dictionary[] = [...quizSet, ...extraSet];
         let newOptions:Dictionary[] = [];
@@ -317,20 +311,42 @@ function GameMain() {
         // 正答を挿入
         let ansIndex = newOptions.findIndex((e)=> e.title == quizSet[gameIndex].title);
         if( ansIndex == -1 ){
-            let newIndex:number = Math.floor( Math.random() * 4 );
-            newOptions[ newIndex ] = quizSet[gameIndex];
-            setCorrectOptionIndex(newIndex);
+            ansIndex = Math.floor( Math.random() * 4 );
+            newOptions[ ansIndex ] = quizSet[gameIndex];
+            setCorrectOptionIndex(ansIndex);
         } else {
             setCorrectOptionIndex(ansIndex);
         }
         console.log(newOptions);
+        console.log("ans: "+ansIndex);
         setOptions(newOptions);
     },[gameIndex]);
 
+    // クリックイベント　スタート画面に戻る
     function handleClickBack() {
         setIsResult(false);
     }
 
+    // クリックイベント　間違えた問題をリトライ
+    function handleClickRevenge() {
+        setGameIndex(0);
+        // 問題セット
+        let newQuiz:Dictionary[] = [];
+        let wrongQuiz:Dictionary[] = quizSet.filter((e,i)=>!tfTable[i]);
+        
+        while(0<wrongQuiz.length){
+            newQuiz.push(
+                wrongQuiz.splice(Math.floor(Math.random() * wrongQuiz.length), 1)[0]
+            );
+        }
+        //setNumWords(newQuiz.length);
+        setQuizSet(newQuiz);
+        initTfTable(newQuiz.length);
+        setIsResult(false);
+        setIsPlaying(true);
+    }
+
+    // リロード　エラー時に使う
     function reload() {
         window.location.reload();
     }
@@ -365,6 +381,9 @@ function GameMain() {
                         <h2>Result</h2>
                         <TfTable arr={tfTable} gameIndex={gameIndex}/>
                         <input type="submit" value="Back" onClick={handleClickBack}/>
+                        {
+                            tfTable.some((v)=>!v) ? <input type="submit" value="Revenge" onClick={handleClickRevenge}/> : null
+                        }
                         <hr/>
                         <div style={{height:"200px", overflow:"scroll"}}>
                         {
@@ -379,7 +398,7 @@ function GameMain() {
                     <>
                         <h1>Wiktionary Game</h1>
                         <input type="number" value={numWords} onChange={(e)=>{setNumWords(Number(e.target.value))}}/>
-                        <input type="submit" value="Start" onClick={handleClickStart}/>
+                        <input type="submit" value="Start" onClick={()=>{handleClickStart(numWords)}}/>
                     </>
             }
         </>
