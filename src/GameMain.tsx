@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import $ from "jquery";
+import TfTable from "./components/TfTable.tsx";
 
 type Dictionary = {
 	title: string;
@@ -7,13 +8,20 @@ type Dictionary = {
 	definition: string;
 };
 
+// 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
+const ADD_LS_QUIZ:boolean = true;
+// 出題に、ローカルストレージにキャッシュした問題を使う
+const USE_LS_QUIZ:boolean = true;
+
 function GameMain() {
-    // ロード中
-    const [loading, setLoading] = useState<boolean>(false);
+    // ステート：ロード中
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     // ローディング進度
     const [loadingCounter, setLoadingCounter] = useState<number>(0);
-    // ゲーム進行中
+    // ステート：ゲーム進行中
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    // ステート：リザルト画面
+    const [isResult, setIsResult] = useState<boolean>(false);
     // ゲーム進度
     const [gameIndex, setGameIndex] = useState<number>(-1);
     // 出題数
@@ -26,40 +34,122 @@ function GameMain() {
     const numExtraQuizSet = 4;
     // 選択肢
     const [options, setOptions] = useState<Dictionary[]>([]);
-    // 正答
+    // 選択肢内の、正答のインデックス
     const [correctOptionIndex, setCorrectOptionIndex] = useState<number>(0);
+    // 正誤表
+    const [tfTable, setTfTable] = useState<boolean[]>([]);
 
-    function handleClickOption( index:number ){
-        if( index == correctOptionIndex ){
-            console.log("correct");
+    // ローカルストレージ(quizCache)の表示テスト
+    // useEffect(()=>{
+    //     // localStorage.removeItem("quizCache")
+    //     if( localStorage.getItem("quizCache") == null ){
+    //         localStorage.setItem("quizCache", JSON.stringify([]));
+    //     }
+    //     let quizCahe = localStorage.getItem("quizCache");
+    //     console.log("quizCache: " + quizCahe);
+    // },[]);
+
+    // 選択肢のクリックイベント　正誤判定して進行する
+    function handleClickOption( optionIndex:number ) {
+        if( optionIndex == correctOptionIndex ){
+            // console.log("correct");
+            let newTfTable = tfTable;
+            newTfTable[gameIndex] = true;
+            setTfTable( newTfTable );
         }else{
-            console.log("wrong");
+            // console.log("wrong");
         }
+        setGameIndex((i)=>i+1);
+        if(gameIndex < quizSet.length - 1){
+            return;
+        }
+        // リザルト画面へ
+        setIsPlaying(false);
+        setIsResult(true);
     }
 
+    // スタートボタンのクリックイベント
     async function handleClickStart() {
         console.log(`clicked start button: numWords=${numWords}`);
-        setLoading(true);
+        setIsLoading(true);
         setLoadingCounter(0);
-        try{
-            // 出題リスト
-            let newQuizSet = await generateDictionary(numWords, setLoadingCounter);
+        
+        if(USE_LS_QUIZ){
+            // クイズをローカルストレージから生成する
+            // フェッチに時間がかかるので今のところテスト用
+            let newQuizSet:Dictionary[] = [];
+            let newExtraSet:Dictionary[] = [];
+            let cacheString = localStorage.getItem("quizCache");
+            // 異常：ローカルストレージが空
+            if( cacheString == null ){
+                alert( `localStorage(quizCache) is null` );
+                
+                return;
+            }
+            let cache = JSON.parse(cacheString).flat();
+            // 異常：キャッシュされた問題数が足りない
+            if( cache.length < numWords + numExtraQuizSet){
+                alert( `localStorage(quizCache) is null` );
+                reload();
+                return;
+            }
+            for(let i = 0; i < numWords; i++){
+                newQuizSet.push(
+                    cache.splice(Math.floor(Math.random() * cache.length), 1)[0]
+                );
+            }
             setQuizSet(()=>[...newQuizSet]);
-            // 選択肢用の追加リスト
-            let newExtraSet = await generateDictionary(numExtraQuizSet, setLoadingCounter);
+            for(let i = 0; i < numExtraQuizSet; i++){
+                newExtraSet.push(
+                    cache.splice(Math.floor(Math.random() * cache.length), 1)[0]
+                );
+            }
             setExtraSet(()=>[...newExtraSet]);
-            // 選択肢テスト
-            //generateOptions(newQuizSet, newExtraSet);
-        } catch(error) {
-            alert(error);
-            window.location.reload();
+        } else {
+            // クイズをWebAPIから生成
+            try{
+                // 出題リスト
+                let newQuizSet:Dictionary[] = await generateQuizSet(numWords, setLoadingCounter);
+                setQuizSet(()=>[...newQuizSet]);
+                // 選択肢用の追加リスト
+                let newExtraSet:Dictionary[] = await generateQuizSet(numExtraQuizSet, setLoadingCounter);
+                setExtraSet(()=>[...newExtraSet]);
+            } catch(error) {
+                alert(error);
+                reload();
+            }
         }
-        setLoading(false);
+        
+        setIsLoading(false);
         setIsPlaying(true);
         setGameIndex(0);
+        initTfTable();
     }
 
-    async function generateDictionary( num:number, setCounter:any=undefined ){
+    // 正誤表を初期化
+    function initTfTable( ) {
+        let newTfTable:boolean[] = Array(numWords).fill(false);
+        setTfTable(newTfTable);
+    }
+
+    //　問題をローカルストレージに保存
+    function addQuizCache( newV:Dictionary ) {
+        let quizCacheString = localStorage.getItem("quizCache");
+        if( quizCacheString == null){
+            quizCacheString = "[]";
+        }
+        let quizCache:Dictionary[] = JSON.parse(quizCacheString);
+        quizCache = quizCache.flat();
+        if( !quizCache.some((v)=> v.title == newV.title && v.part == newV.part) ){
+            quizCache.push(newV);
+            localStorage.setItem("quizCache", JSON.stringify(quizCache));
+            console.log("quizCahe pushed title:"+newV.title);
+        }
+
+    }
+
+    // 問題セットを生成
+    async function generateQuizSet( num:number, setCounter:any=undefined ) {
         try{
             let fetchedWords:string[] = await fetchRandomWords(num);
             let newQuizSet:Dictionary[] = [];
@@ -68,10 +158,14 @@ function GameMain() {
                 let newQuiz:Dictionary = getDefinition( $doc, fetchedWords[i] );
                 console.log(newQuiz);
                 if(newQuiz.definition == ""){
-                    // definitionをフェッチできなかった 別の単語で再取得処理を入れる
+                    // definitionをフェッチできなかった 別の単語で再取得処理を入れる必要あり
                     throw new Error(`Failed to fetch definition. ${fetchedWords[i]}`);
                 }
                 newQuizSet.push(newQuiz);
+                if(ADD_LS_QUIZ){
+                    addQuizCache(newQuiz);
+                }
+                // ローディング進捗表示用のカウンター
                 if(setCounter != undefined){
                     (setCounter as React.Dispatch<React.SetStateAction<number>>)((prev)=>prev+1);
                 }
@@ -82,7 +176,8 @@ function GameMain() {
         }
     }
 
-    async function fetchRandomWords( num:number ){
+    // RandoAPIからランダムな単語をフェッチ
+    async function fetchRandomWords( num:number ) {
         try {
             const res = await $.ajax({
                 url: "https://random-word-api.vercel.app/api?words=" + num,
@@ -98,7 +193,7 @@ function GameMain() {
         }
     }
 
-    // WiktionaryAPIからHTML文書を取得、余分な箇所を削除する
+    // WiktionaryAPIからHTML文書をフェッチ、余分な箇所を削除する
     async function fetchWiktionary( title:string ){
         try {
             await new Promise(resolve => setTimeout(resolve, 10));
@@ -150,7 +245,7 @@ function GameMain() {
         }
     }
 
-    // jQueryDocumentから定義を取り出す
+    // WiktionaryからフェッチしたHTMLから定義を取り出す
     function getDefinition( $doc:JQuery<Document>, title:string, part:string = "Random" ):Dictionary{
         
         // 品詞の指定が無い場合ランダムに取得し、一番にヒットしたものを返す
@@ -206,8 +301,9 @@ function GameMain() {
         return {title:title, part:foundPart, definition:definition};
     }
 
+    // ゲーム進行時イベント　選択肢を生成する
     useEffect(()=>{
-        if(gameIndex == -1){
+        if(gameIndex == -1 || isResult){
             return;
         }
         // 選択肢を生成
@@ -231,35 +327,60 @@ function GameMain() {
         setOptions(newOptions);
     },[gameIndex]);
 
+    function handleClickBack() {
+        setIsResult(false);
+    }
+
+    function reload() {
+        window.location.reload();
+    }
+
     return (
         <>
             {
-                loading ?
-                <>
-                    <p>loading...</p>
-                    <p>{`quizSet: ${Math.min(numWords,loadingCounter)} / ${numWords}`}</p>
-                    <p>{`extraSet: ${Math.max(0,loadingCounter-numWords)} / ${numExtraQuizSet}`}</p>
-                </>
+                isLoading ?
+                    <>
+                        <p>loading...</p>
+                        <p>{`quizSet: ${Math.min(numWords,loadingCounter)} / ${numWords}`}</p>
+                        <p>{`extraSet: ${Math.max(0,loadingCounter-numWords)} / ${numExtraQuizSet}`}</p>
+                    </>
                 :
                 isPlaying ?
-                <>
-                    <h2>{quizSet[0].title}</h2>
-                    {
-                        options.map((v,i)=>{
-                            return (
-                                <div key={i}>
-                                    <p key={i} onClick={()=>{handleClickOption(i)}}>{`${v.part} : ${v.definition}`}</p>
-                                </div>
-                            )
-                        })
-                    }
-                </>
+                    <>
+                        <TfTable arr={tfTable} gameIndex={gameIndex}/>
+                        <h2>{quizSet[gameIndex].title}</h2>
+                        {
+                            options.map((v,i)=>{
+                                return (
+                                    <div key={i}>
+                                        <p key={i} onClick={()=>{handleClickOption(i)}}>{`${v.part} : ${v.definition}`}</p>
+                                    </div>
+                                )
+                            })
+                        }
+                    </>
                 :
-                <>
-                    <h1>Wiktionary Game</h1>
-                    <input type="number" value={numWords} onChange={(e)=>{setNumWords(Number(e.target.value))}}/>
-                    <input type="submit" value="Start" onClick={handleClickStart}/>
-                </>
+                isResult ?
+                    <>
+                        <h2>Result</h2>
+                        <TfTable arr={tfTable} gameIndex={gameIndex}/>
+                        <input type="submit" value="Back" onClick={handleClickBack}/>
+                        <hr/>
+                        <div style={{height:"200px", overflow:"scroll"}}>
+                        {
+                            quizSet.map((v,i)=>{
+                                let c:string = tfTable[i] ? "green" : "red";
+                                return <p key={i} style={{color:c}}>{`${v.title}: (${v.part}) ${v.definition}`}</p>
+                            })
+                        }
+                        </div>
+                    </>
+                :
+                    <>
+                        <h1>Wiktionary Game</h1>
+                        <input type="number" value={numWords} onChange={(e)=>{setNumWords(Number(e.target.value))}}/>
+                        <input type="submit" value="Start" onClick={handleClickStart}/>
+                    </>
             }
         </>
     );
