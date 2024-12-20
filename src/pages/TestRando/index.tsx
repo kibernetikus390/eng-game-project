@@ -1,26 +1,19 @@
 import { useState } from "react";
-import $ from "jquery";
 
 function TestRando() {
   const [words, setWords] = useState<string[]>([]);
   const [numWords, setNumWords] = useState<number>(10);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     console.log("clicked. num:" + numWords);
-    $.ajax({
-      url: "https://random-word-api.vercel.app/api?words=" + numWords,
-      method: "GET",
-      dataType: "json",
-      success: function (res) {
-        console.log("success");
-        console.log(res);
-        setWords(res);
-      },
-      error: function (res) {
-        console.log("error");
-        console.log(res);
-      },
-    });
+    try {
+      const resRaw = await fetch("https://random-word-api.vercel.app/api?words=" + numWords);
+      const res:string[] = JSON.parse( await resRaw.text() );
+      setWords(res);
+    } catch (error) {
+      alert("Failed to fetch from Rando: " + error);
+      throw error;
+    }
   }
 
   return (

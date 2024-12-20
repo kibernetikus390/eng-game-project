@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import $ from "jquery";
 import TfTable from "../../components/TfTable/";
 import classes from "./index.module.css";
 
@@ -137,8 +136,8 @@ function Game() {
       const fetchedWords: string[] = await fetchRandomWords(num);
       const newQuizSet: Dictionary[] = [];
       for (let i = 0; i < fetchedWords.length; i++) {
-        const $doc: JQuery<Document> = await fetchWiktionary(fetchedWords[i]);
-        const newQuiz: Dictionary = getDefinition($doc, fetchedWords[i]);
+        const doc: Document = await fetchWiktionary(fetchedWords[i]);
+        const newQuiz: Dictionary = getDefinition(doc, fetchedWords[i]);
         console.log(newQuiz);
         if (newQuiz.definition == "") {
           // definitionをフェッチできなかった 別の単語で再取得処理を入れる必要あり
@@ -162,13 +161,9 @@ function Game() {
   // RandoAPIからランダムな単語をフェッチ
   async function fetchRandomWords(num: number) {
     try {
-      const res = await $.ajax({
-        url: "https://random-word-api.vercel.app/api?words=" + num,
-        method: "GET",
-        dataType: "json",
-      });
-      console.log("Success: fetch from Rando");
-      console.log(res);
+      const resRaw = await fetch("https://random-word-api.vercel.app/api?words=" + num);
+      const res:string[] = JSON.parse( await resRaw.text() );
+      // console.log("Success: fetch from Rando : " + res);
       return res;
     } catch (error) {
       alert("Failed to fetch from Rando: " + error);
@@ -179,50 +174,49 @@ function Game() {
   // WiktionaryAPIからHTML文書をフェッチ、余分な箇所を削除する
   async function fetchWiktionary(title: string) {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      const res = await $.ajax({
-        url: `https://en.wiktionary.org/w/api.php?action=query&format=json&origin=*&prop=extracts&titles=${title}&callback=&formatversion=2`,
-      });
-      console.log("Success: fetch from Wiktionary");
-      // console.log(res)
-      //let resJSONP:any = await res.text();
+      const resRaw = await fetch(`https://en.wiktionary.org/w/api.php?action=query&format=json&origin=*&prop=extracts&titles=${title}&callback=&formatversion=2`);
+      const res = await resRaw.text();
       const resJSON = await JSON.parse(res.slice(5, -1));
       const parser = new DOMParser();
       const doc = parser.parseFromString(
         resJSON.query.pages[0].extract,
         "text/html",
       );
-      const $doc = $(doc);
 
       // English以降のH2と以降の要素を削除する。（他言語の定義をヒットさせないため）
-      let deleteNextH2: boolean = false;
-      let deletedH2: boolean = false;
-      let foundEnglishH2: boolean = false;
-      $doc.find("h2").each((_, e) => {
-        if (deletedH2) return;
-        if (deleteNextH2) {
-          // console.log("deleted h2")
-          $(e).nextAll().addBack().remove();
-          deletedH2 = true;
+      const docNative = doc;
+      let deleteNextH2Native: boolean = false;
+      let deletedH2Native: boolean = false;
+      let foundEnglishH2Native: boolean = false;
+      docNative.querySelectorAll("h2").forEach((e)=>{
+        if (deletedH2Native) return;
+        if (deleteNextH2Native) {
+          let elmToDelete:Element|null = e;
+          while(elmToDelete) {
+            const nextElm:Element|null= elmToDelete.nextElementSibling;
+            elmToDelete.remove();
+            elmToDelete = nextElm;
+          }
+          deletedH2Native = true;
           return;
         }
-        if ($(e).data("mw-anchor") == "English") {
-          deleteNextH2 = true;
-          foundEnglishH2 = true;
+        if (e.dataset.mwAnchor == "English") {
+          deleteNextH2Native = true;
+          foundEnglishH2Native = true;
         }
       });
 
       // この要素が存在しなければ、辞書に載っていない
-      if (!foundEnglishH2) {
+      if (!foundEnglishH2Native) {
         throw new Error(`No english definition found. (title:${title})`);
       }
 
       // 説明文の中にdd,dl要素(類義語等)があると後々邪魔なので削除しておく
-      $doc.find("dd").remove();
+      docNative.querySelectorAll("dd").forEach((e)=>{e.remove()});
       // リスト内にまたリストが登場することがある(用途の限定など)
-      $doc.find("li ol, li ul").remove();
+      docNative.querySelectorAll("li ol, li ul").forEach((e)=>{e.remove()});
 
-      return $doc;
+      return docNative;
     } catch (error) {
       alert(`Failed to fetch from Wiktionary (title:${title}) : + ${error}`);
       throw error;
@@ -231,7 +225,7 @@ function Game() {
 
   // WiktionaryからフェッチしたHTMLから定義を取り出す
   function getDefinition(
-    $doc: JQuery<Document>,
+    doc: Document,
     title: string,
     part: string = "Random",
   ): Dictionary {
@@ -262,27 +256,20 @@ function Game() {
     let definition: string = "";
     let foundPart: string = "";
     for (let i = 0; definition == "" && i < partsToSearch.length; i++) {
-      if ($doc.find(`[data-mw-anchor="${partsToSearch[i]}"]`).length == 0) {
-        // console.log(`no definition exist {part:${partsToSearch[i]}}`);
+      if(doc.querySelectorAll(`[data-mw-anchor="${partsToSearch[i]}"]`).length == 0){
         continue;
       }
       // テキスト部分を取得
-      //definition = $doc.find(`[data-mw-anchor="${partsToSearch[i]}"]`).next().next().children().first().text().trim();
-      $doc
-        .find(`[data-mw-anchor="${partsToSearch[i]}"]`)
-        .next()
-        .next()
-        .children()
-        .each(function (_, val) {
-          if (definition != "") {
-            return;
-          }
-          const txt = $(val).text().split(/\[/)[0].trim();
-          if (txt == "") {
-            return;
-          }
-          definition = txt;
-        });
+      doc.querySelector(`[data-mw-anchor="${partsToSearch[i]}"]`)?.nextElementSibling?.nextElementSibling?.childNodes.forEach((v)=>{
+        if (definition != "") {
+          return;
+        }
+        const txt = v.textContent?.split(/\[/)[0].trim();
+        if (txt == "" || txt == undefined) {
+          return;
+        }
+        definition = txt;
+      });
 
       if (definition == "") {
         console.log(
@@ -384,7 +371,7 @@ function Game() {
           <TfTable arr={tfTable} gameIndex={gameIndex} />
           <input type="submit" value="Back" onClick={handleClickBack} />
           {tfTable.some((v) => !v) ? (
-            <input type="submit" value="Revenge" onClick={handleClickRevenge} />
+            <input type="submit" value="Retry Mistakes" onClick={handleClickRevenge} />
           ) : null}
           <hr />
           <div style={{ height: "200px", overflow: "scroll" }}>
