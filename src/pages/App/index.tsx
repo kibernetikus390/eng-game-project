@@ -5,15 +5,23 @@ import TestRando from "../TestRando";
 import GameMain from "../Game";
 import NavBar from "../../components/NavBar";
 import { ThemeContext } from "../../ThemeContext.tsx";
-// import "./index.module.css";
 
 function App() {
-  const [theme, setTheme] = useState<string>((localStorage.getItem("theme") === 'dark' ? 'dark' : 'light'));
+  const [theme, setTheme] = useState<string>(initDarkMode());
   function toggleTheme() {
     const newTheme = (theme === 'light' ? 'dark' : 'light');
     setTheme(newTheme);
     localStorage.setItem("theme",newTheme);
   };
+
+  function initDarkMode() {
+    const isSystemDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const storedTheme = localStorage.getItem("theme");
+    if(storedTheme == undefined) {
+      return isSystemDarkMode ? "dark" : "light";
+    }
+    return storedTheme;
+  }
 
   return (
     <ThemeContext.Provider value={{theme, toggleTheme}}>

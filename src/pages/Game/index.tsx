@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import TfTable from "../../components/TfTable/";
 import classes from "./index.module.css";
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 
 // 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
 const VITE_ADD_LS_QUIZ:boolean = true;
 // 出題に、ローカルストレージにキャッシュした問題を使う
-const VITE_USE_LS_QUIZ:boolean = true;
+const VITE_USE_LS_QUIZ:boolean = false;
 
 
 type Dictionary = {
@@ -396,20 +398,22 @@ function Game() {
       ) : (
         <div>
           <h1>Wiktionary Game</h1>
-          <input
-            type="number"
-            value={numWords}
-            onChange={(e) => {
-              setNumWords(Number(e.target.value));
-            }}
-          />
-          <input
-            type="submit"
-            value="Start"
-            onClick={() => {
-              handleClickStart(numWords);
-            }}
-          />
+          <Stack spacing={2} direction="row">
+            <input
+              type="number"
+              value={numWords}
+              onChange={(e) => {
+                setNumWords(Number(e.target.value));
+              }}
+            />
+            <Button 
+              style={{textTransform:"none"}}
+              variant="contained"
+              onClick={()=>{handleClickStart(numWords);}}
+            >
+              Start
+            </Button>
+          </Stack>
         </div>
       )}
     </div>
