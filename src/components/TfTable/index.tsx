@@ -1,11 +1,6 @@
 // import { useEffect, useState } from "react";
 
-type tfTableProps = {
-  arr: boolean[];
-  gameIndex: number;
-};
-
-function TfTable(props: tfTableProps) {
+function TfTable(props: {arr: boolean[], gameIndex: number}) {
   return (
     <div>
       {props.arr.map((v, i) => {

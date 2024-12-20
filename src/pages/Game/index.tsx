@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import TfTable from "../../components/TfTable/";
 import classes from "./index.module.css";
 
+// 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
+const VITE_ADD_LS_QUIZ:boolean = true;
+// 出題に、ローカルストレージにキャッシュした問題を使う
+const VITE_USE_LS_QUIZ:boolean = true;
+
+
 type Dictionary = {
   title: string;
   part: string;
@@ -59,14 +65,14 @@ function Game() {
     setLoadingCounter(0);
     let newQuizSet: Dictionary[]|undefined = [];
     let newExtraSet: Dictionary[]|undefined = [];
-    if (import.meta.env.VITE_USE_LS_QUIZ) {
+    if (VITE_USE_LS_QUIZ) {
       // クイズをローカルストレージから生成する
       // フェッチに時間がかかるので今のところテスト用
       const cacheString = localStorage.getItem("quizCache");
       // 異常：ローカルストレージが空
       if (cacheString == null) {
         alert(`localStorage(quizCache) is null`);
-
+        reload();
         return;
       }
       const cache = JSON.parse(cacheString).flat();
@@ -144,7 +150,7 @@ function Game() {
           throw new Error(`Failed to fetch definition. ${fetchedWords[i]}`);
         }
         newQuizSet.push(newQuiz);
-        if (import.meta.env.VITE_ADD_LS_QUIZ) {
+        if (VITE_ADD_LS_QUIZ) {
           addQuizCache(newQuiz);
         }
         // ローディング進捗表示用のカウンター
@@ -341,7 +347,8 @@ function Game() {
   }
 
   return (
-    <div className={classes.Host}>
+    // <div className={`${classes.Host} ${theme === "light" ? null : classes.dark}`}>
+    <div>
       {isLoading ? (
         <div>
           <p>loading...</p>
@@ -374,7 +381,7 @@ function Game() {
             <input type="submit" value="Retry Mistakes" onClick={handleClickRevenge} />
           ) : null}
           <hr />
-          <div style={{ height: "200px", overflow: "scroll" }}>
+          <div className={classes.resultBox}>
             {quizSet.map((v, i) => {
               const c: string = tfTable[i] ? "green" : "red";
               return (
