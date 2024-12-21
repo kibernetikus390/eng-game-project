@@ -12,6 +12,12 @@ import CssBaseline from '@mui/material/CssBaseline';
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
+    background: {
+      default: "#222222"
+    },
+    // primary: {
+    //   main: '#111111',
+    // },
   },
 });
 const lightTheme = createTheme({
@@ -42,13 +48,13 @@ function App() {
       <CssBaseline />
       <ThemeContext.Provider value={{theme, toggleTheme}}>
         <NavBar>
-          <Router>
-            <Routes>
-              <Route path="/" element={<GameMain />} />
-              <Route path="/testWik" element={<TestWiktionary />} />
-              <Route path="/testRando" element={<TestRando />} />
-            </Routes>
-          </Router>
+            <Router>
+              <Routes>
+                  <Route path="/" element={<GameMain />} />
+                <Route path="/testWik" element={<TestWiktionary />} />
+                <Route path="/testRando" element={<TestRando />} />
+              </Routes>
+            </Router>
         </NavBar>
       </ThemeContext.Provider>
     </ThemeProvider>

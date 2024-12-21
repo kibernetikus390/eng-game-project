@@ -351,7 +351,7 @@ function Game() {
   }
 
   // 問題数の入力フォーム更新イベント
-  function handleNumChange(e){
+  function handleNumChange(e:any){
     let num = Number(e.target.value);
     if(num < 1) num = 1;
     if(num > 50) num = 50;
@@ -414,11 +414,11 @@ function Game() {
         </div>
       ) : (
         <Container maxWidth="sm" sx={{height: '90%', display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
-          <Box>
+          <Stack spacing={2}>
             <Typography variant="h2" sx={{textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
               Wiktionary Game
             </Typography>
-            <Divider sx={{margin:"1em"}}/>
+            <Divider/>
             <Stack spacing={2} direction="row" sx={{justifyContent: 'center', alignItems: 'center'}}>
               <TextField 
                 sx={{ m: 1, width: '20ch' }}
@@ -435,7 +435,7 @@ function Game() {
                 Start
               </Button>
             </Stack>
-          </Box>
+          </Stack>
         </Container >
       )}
     </Container>
