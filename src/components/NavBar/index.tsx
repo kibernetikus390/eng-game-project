@@ -3,6 +3,10 @@ import { ThemeContext } from "../../ThemeContext";
 import classes from "./index.module.css";
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import IconButton from '@mui/material/IconButton';
 
 function NavBar(props:any) {
     const {theme, toggleTheme} = useContext(ThemeContext);
@@ -12,9 +16,13 @@ function NavBar(props:any) {
             <AppBar 
                 position="static" 
                 elevation={1}
-                sx={theme==="light"?null:{bgcolor: "#333333"}}
+                sx={theme==="light"?null:{bgcolor: "#252525"}}
             >
-                <p onClick={toggleTheme}>{theme}</p>
+                <Container sx={{p:1,textAlign:"right"}}>
+                    <IconButton onClick={toggleTheme}>
+                        {theme==="light"?<LightModeIcon sx={{color:"white"}}/>:<DarkModeIcon/>}
+                    </IconButton>
+                </Container>
             </AppBar>
             {props.children}
         </Box>

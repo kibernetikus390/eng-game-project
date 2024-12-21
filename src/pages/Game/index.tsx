@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { ThemeContext } from "../../ThemeContext.tsx";
 import TfTable from "../../components/TfTable/";
 import classes from "./index.module.css";
 import CircularProgressWithLabel from "../../components/CircularProgressWithLabel";
@@ -10,11 +11,13 @@ import Container from '@mui/material/Container';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import Grid from '@mui/material/Grid2';
+import Paper from '@mui/material/Paper';
 
 // 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
 const VITE_ADD_LS_QUIZ:boolean = true;
 // 出題に、ローカルストレージにキャッシュした問題を使う
-const VITE_USE_LS_QUIZ:boolean = false;
+const VITE_USE_LS_QUIZ:boolean = true;
 
 
 type Dictionary = {
@@ -48,6 +51,7 @@ function Game() {
   const [correctOptionIndex, setCorrectOptionIndex] = useState<number>(0);
   // 正誤表
   const [tfTable, setTfTable] = useState<boolean[]>([]);
+  const {theme, toggleTheme} = useContext(ThemeContext);
 
   // 選択肢のクリックイベント 正誤判定して進行する
   function handleClickOption(optionIndex: number) {
@@ -375,43 +379,93 @@ function Game() {
           </Box>
         </Container>
       ) : isPlaying ? (
-        <div>
-          <TfTable arr={tfTable} gameIndex={gameIndex} />
-          <h2>{quizSet[gameIndex].title}</h2>
-          {options.map((v, i) => {
-            return (
-              <div key={i}>
-                <p
-                  key={i}
-                  onClick={() => {
-                    handleClickOption(i);
-                  }}
-                >{`${v.part} : ${v.definition}`}</p>
-              </div>
-            );
-          })}
-        </div>
-      ) : isResult ? (
-        <div>
-          <h2>Result</h2>
-          <TfTable arr={tfTable} gameIndex={gameIndex} />
-          <input type="submit" value="Back" onClick={handleClickBack} />
-          {tfTable.some((v) => !v) ? (
-            <input type="submit" value="Retry Mistakes" onClick={handleClickRevenge} />
-          ) : null}
-          <hr />
-          <div className={classes.resultBox}>
-            {quizSet.map((v, i) => {
-              const c: string = tfTable[i] ? "green" : "red";
+        <Container maxWidth="sm" sx={{height: '90%', display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
+          <Stack spacing={2}>
+            <TfTable arr={tfTable} gameIndex={gameIndex} />
+            <Typography variant="h3">{quizSet[gameIndex].title}</Typography>
+            <Stack spacing={2}>
+            {options.map((v, i) => {
               return (
-                <p
-                  key={i}
-                  style={{ color: c }}
-                >{`${v.title}: (${v.part}) ${v.definition}`}</p>
+                <Typography 
+                  variant="subtitle1" 
+                  key={i} 
+                  align={"left"}
+                  onClick={() => {handleClickOption(i)}}
+                  sx={{
+                    borderRadius: 2,
+                    boxShadow: 2,
+                    background: theme==="dark"?"#333":"#FFF",
+                    p: 1,
+                  }}
+                >
+                    {`(${v.part}) ${v.definition}`}
+                </Typography>
               );
             })}
-          </div>
-        </div>
+            </Stack>
+          </Stack>
+        </Container>
+      ) : isResult ? (
+        <Container maxWidth="md" sx={{height: '90%', display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
+          <Stack spacing={2}>
+            <Typography variant="h5" >
+                Result
+            </Typography>
+            <TfTable arr={tfTable} gameIndex={gameIndex} />
+            <Stack spacing={1} direction="row" sx={{textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
+              <Button 
+                  style={{textTransform:"none"}}
+                  variant="outlined"
+                  onClick={handleClickBack}
+              >
+                Back
+              </Button>
+              {tfTable.some((v) => !v) ? (
+                <Button 
+                style={{textTransform:"none"}}
+                variant="outlined"
+                onClick={handleClickRevenge}
+                >
+                  Retry Mistakes
+                </Button>
+              ) : null}
+            </Stack>
+            <Divider/>
+            <Container className={classes.resultBox} 
+              sx={{
+                borderRadius: 1,
+                boxShadow: 1,
+                background: theme==="dark"?"#252525":"#FEFEFE",
+                p: 1,
+            }}>
+              <Stack spacing={2}>
+                {quizSet.map((v, i) => {
+                  const c: string = tfTable[i] ? "success" : "error";
+                  return (
+                    <Grid 
+                      key={i+"p"}
+                      container 
+                      spacing={1}
+                      sx={{
+                        borderRadius: 1,
+                        boxShadow: 1,
+                        background: theme==="dark"?"#333":"#FFF",
+                        p: 1,
+                        textAlign: 'left', 
+                        alignItems: 'center'
+                      }}>
+                      <Grid size={11} key={i+"t"}>
+                        <Typography color={c} variant="h5">{`${v.title}`}</Typography>
+                        <Typography color={c} variant="subtitle1">{`(${v.part}) ${v.definition}`}</Typography>
+                      </Grid>
+                      <Grid size={1} key={i+"d"}></Grid>
+                    </Grid>
+                  );
+                })}
+              </Stack>
+            </Container>
+          </Stack>
+        </Container>
       ) : (
         <Container maxWidth="sm" sx={{height: '90%', display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
           <Stack spacing={2}>
