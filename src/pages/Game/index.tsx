@@ -15,9 +15,9 @@ import Grid from '@mui/material/Grid2';
 import Paper from '@mui/material/Paper';
 
 // 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
-const VITE_ADD_LS_QUIZ:boolean = true;
+const VITE_ADD_LS_QUIZ:boolean = false;
 // 出題に、ローカルストレージにキャッシュした問題を使う
-const VITE_USE_LS_QUIZ:boolean = true;
+const VITE_USE_LS_QUIZ:boolean = false;
 
 
 type Dictionary = {
@@ -367,6 +367,9 @@ function Game() {
     window.location.reload();
   }
 
+  let correctNum:number = 0;
+  tfTable.map((v)=>{if(v)correctNum++});
+
   return (
     <Container sx={{height: '100%'}}>
       {isLoading ? (
@@ -408,10 +411,9 @@ function Game() {
       ) : isResult ? (
         <Container maxWidth="md" sx={{height: '90%', display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
           <Stack spacing={2}>
-            <Typography variant="h5" >
-                Result
+            <Typography variant="h3" >
+                {`${correctNum} / ${quizSet.length}`}
             </Typography>
-            <TfTable arr={tfTable} gameIndex={gameIndex} />
             <Stack spacing={1} direction="row" sx={{textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
               <Button 
                   style={{textTransform:"none"}}
