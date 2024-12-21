@@ -6,6 +6,20 @@ import GameMain from "../Game";
 import NavBar from "../../components/NavBar";
 import { ThemeContext } from "../../ThemeContext.tsx";
 
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
+const lightTheme = createTheme({
+  palette: {
+    mode: 'light',
+  },
+});
+
 function App() {
   const [theme, setTheme] = useState<string>(initDarkMode());
   function toggleTheme() {
@@ -24,17 +38,20 @@ function App() {
   }
 
   return (
-    <ThemeContext.Provider value={{theme, toggleTheme}}>
-      <NavBar>
-        <Router>
-          <Routes>
-            <Route path="/" element={<GameMain />} />
-            <Route path="/testWik" element={<TestWiktionary />} />
-            <Route path="/testRando" element={<TestRando />} />
-          </Routes>
-        </Router>
-      </NavBar>
-    </ThemeContext.Provider>
+    <ThemeProvider theme={theme==="light"?lightTheme:darkTheme}>
+      <CssBaseline />
+      <ThemeContext.Provider value={{theme, toggleTheme}}>
+        <NavBar>
+          <Router>
+            <Routes>
+              <Route path="/" element={<GameMain />} />
+              <Route path="/testWik" element={<TestWiktionary />} />
+              <Route path="/testRando" element={<TestRando />} />
+            </Routes>
+          </Router>
+        </NavBar>
+      </ThemeContext.Provider>
+    </ThemeProvider>
   );
 }
 

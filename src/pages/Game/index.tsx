@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import TfTable from "../../components/TfTable/";
 import classes from "./index.module.css";
+import CircularProgressWithLabel from "../../components/CircularProgressWithLabel";
+
 import Stack from '@mui/material/Stack';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
 
 // 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
 const VITE_ADD_LS_QUIZ:boolean = true;
@@ -343,20 +350,30 @@ function Game() {
     setIsPlaying(true);
   }
 
+  // 問題数の入力フォーム更新イベント
+  function handleNumChange(e){
+    let num = Number(e.target.value);
+    if(num < 1) num = 1;
+    if(num > 50) num = 50;
+    setNumWords(num);
+  }
+
   // リロード エラー時に使う
   function reload() {
     window.location.reload();
   }
 
   return (
-    // <div className={`${classes.Host} ${theme === "light" ? null : classes.dark}`}>
-    <div>
+    <Container sx={{height: '100%'}}>
       {isLoading ? (
-        <div>
-          <p>loading...</p>
-          <p>{`quizSet: ${Math.min(numWords, loadingCounter)} / ${numWords}`}</p>
-          <p>{`extraSet: ${Math.max(0, loadingCounter - numWords)} / ${numExtraQuizSet}`}</p>
-        </div>
+        <Container maxWidth="sm" sx={{height: '100%', display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
+          <Box>
+            <Typography variant="h3">
+              loading...
+            </Typography>
+            <CircularProgressWithLabel sx={{m:"1em"}} size={"4rem"} value={ loadingCounter / (numWords + numExtraQuizSet) * 100 }/>
+          </Box>
+        </Container>
       ) : isPlaying ? (
         <div>
           <TfTable arr={tfTable} gameIndex={gameIndex} />
@@ -396,27 +413,32 @@ function Game() {
           </div>
         </div>
       ) : (
-        <div>
-          <h1>Wiktionary Game</h1>
-          <Stack spacing={2} direction="row">
-            <input
-              type="number"
-              value={numWords}
-              onChange={(e) => {
-                setNumWords(Number(e.target.value));
-              }}
-            />
-            <Button 
-              style={{textTransform:"none"}}
-              variant="contained"
-              onClick={()=>{handleClickStart(numWords);}}
-            >
-              Start
-            </Button>
-          </Stack>
-        </div>
+        <Container maxWidth="sm" sx={{height: '90%', display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
+          <Box>
+            <Typography variant="h2" sx={{textAlign: 'center', justifyContent: 'center', alignItems: 'center'}}>
+              Wiktionary Game
+            </Typography>
+            <Divider sx={{margin:"1em"}}/>
+            <Stack spacing={2} direction="row" sx={{justifyContent: 'center', alignItems: 'center'}}>
+              <TextField 
+                sx={{ m: 1, width: '20ch' }}
+                id="outlined-basic" 
+                label="Number of Questions" 
+                type="number" 
+                variant="outlined" 
+                value={numWords} onChange={handleNumChange}/>
+              <Button 
+                style={{textTransform:"none"}}
+                variant="contained"
+                onClick={()=>{handleClickStart(numWords);}}
+              >
+                Start
+              </Button>
+            </Stack>
+          </Box>
+        </Container >
       )}
-    </div>
+    </Container>
   );
 }
 
