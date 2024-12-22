@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import TestWiktionary from "../TestWiktionary";
 import TestRando from "../TestRando";
 import GameMain from "../Game";
+import MyLists from "../MyLists";
 import NavBar from "../../components/NavBar";
 import { ThemeContext } from "../../ThemeContext.tsx";
 
@@ -47,15 +48,14 @@ function App() {
     <ThemeProvider theme={theme==="light"?lightTheme:darkTheme}>
       <CssBaseline />
       <ThemeContext.Provider value={{theme, toggleTheme}}>
-        <NavBar>
             <Router>
               <Routes>
-                  <Route path="/" element={<GameMain />} />
+                <Route path="/" element={<NavBar><GameMain /></NavBar>} />
+                <Route path="/mylists" element={<NavBar><MyLists /></NavBar>} />
                 <Route path="/testWik" element={<TestWiktionary />} />
                 <Route path="/testRando" element={<TestRando />} />
               </Routes>
             </Router>
-        </NavBar>
       </ThemeContext.Provider>
     </ThemeProvider>
   );

@@ -4,21 +4,12 @@ import TfTable from "../../components/TfTable/";
 import classes from "./index.module.css";
 import CircularProgressWithLabel from "../../components/CircularProgressWithLabel";
 
-import Stack from '@mui/material/Stack';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Grid from '@mui/material/Grid2';
-import Paper from '@mui/material/Paper';
+import { Stack, Box, Typography, Container, TextField, Button, Divider, MenuItem, Grid2 as Grid} from '@mui/material';
 
 // 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
 const VITE_ADD_LS_QUIZ:boolean = false;
 // 出題に、ローカルストレージにキャッシュした問題を使う
 const VITE_USE_LS_QUIZ:boolean = false;
-
 
 type Dictionary = {
   title: string;
@@ -39,6 +30,9 @@ function Game() {
   const [gameIndex, setGameIndex] = useState<number>(-1);
   // 出題数
   const [numWords, setNumWords] = useState<number>(10);
+  // 出題ソース
+  const [quizSource, setQuizSource] = useState<string>("Random");
+  const [quizSourceList, setQuizSourceList] = useState<string[]>([]);
   // 出題リスト
   const [quizSet, setQuizSet] = useState<Dictionary[]>([]);
   // 選択肢用の追加の出題リスト
@@ -52,6 +46,19 @@ function Game() {
   // 正誤表
   const [tfTable, setTfTable] = useState<boolean[]>([]);
   const {theme, toggleTheme} = useContext(ThemeContext);
+
+  useEffect(()=>{
+    let testList = localStorage.getItem("TOEIC 600");
+    let listArr:string[] = [];
+    // if(testList === null){
+      listArr = ["accommodate","accounting","actually","additional","administration","advance","advertising","afford","analyst","annual","appear","applicant","appreciate","architect","assess","attend","attract","benefit","budget","cater","colleague","compare","complicated","concern","conference","consumer","contract","current","decide","delay","delighted","department","designate","develop","donate","eliminate","encourage","enroll","estate","exceed","except","executive","exhibit","expect","expertise","explain","facility","fail","familiar","feature","fee","figure","frequent","further","handle","identification","improve","include","inquire","instantly","insurance","invest","invite","invoice","involve","luggage","manufacture","miss","notice","offer","owe","participate","passenger","plenty","preservation","previous","proceed","promote","prosperous","provide","publicity","recommend","refund","remind","remove","replacement","representative","reservation","responsible","result","review","severe","shipment","shortage","store","survey","transportation","voucher","workplace","workshop",];
+    // } else {
+    //   listArr = JSON.parse(testList);
+    // }
+    localStorage.setItem("TOEIC 600",JSON.stringify(listArr));
+    localStorage.setItem("MyLists", JSON.stringify(["TOEIC 600"]));
+    setQuizSourceList(["TOEIC 600"]);
+  },[]);
 
   // 選択肢のクリックイベント 正誤判定して進行する
   function handleClickOption(optionIndex: number) {
@@ -73,7 +80,7 @@ function Game() {
   }
 
   // スタートボタンのクリックイベント
-  async function handleClickStart(num: number) {
+  async function handleClickStart(num: number, source: string) {
     setIsLoading(true);
     setLoadingCounter(0);
     let newQuizSet: Dictionary[]|undefined = [];
@@ -111,10 +118,10 @@ function Game() {
       // クイズをWebAPIから生成
       try {
         // 出題リスト
-        newQuizSet = await generateQuizSet(num, setLoadingCounter);
+        newQuizSet = await generateQuizSet(num, source, setLoadingCounter);
         setQuizSet(() => [...newQuizSet as Dictionary[]]);
         // 選択肢用の追加リスト
-        newExtraSet = await generateQuizSet(numExtraQuizSet, setLoadingCounter);
+        newExtraSet = await generateQuizSet(numExtraQuizSet, source, setLoadingCounter);
         setExtraSet(() => [...newExtraSet as Dictionary[]]);
       } catch (error) {
         alert(error);
@@ -150,17 +157,52 @@ function Game() {
   }
 
   // 問題セットを生成
-  async function generateQuizSet(num: number, setCounter: React.Dispatch<React.SetStateAction<number>>) {
+  async function generateQuizSet(num: number, source: string, setCounter: React.Dispatch<React.SetStateAction<number>>) {
     try {
-      const fetchedWords: string[] = await fetchRandomWords(num);
+      let fetchedWords: string[] = [];
+      let wordsMyList: string[] = [];
       const newQuizSet: Dictionary[] = [];
+      if(source === "Random"){
+        fetchedWords = await fetchRandomWords(num, "Random");
+      } else {
+        const ls = localStorage.getItem(source);
+        if(ls === null){
+          throw new Error("no list exist");
+        }
+        wordsMyList = JSON.parse(ls);
+        for (let i = 0; i < num; i++) {
+          fetchedWords.push(
+            wordsMyList.splice(Math.floor(Math.random() * wordsMyList.length), 1)[0],
+          );
+        }
+      }
       for (let i = 0; i < fetchedWords.length; i++) {
         const doc: Document = await fetchWiktionary(fetchedWords[i]);
         const newQuiz: Dictionary = getDefinition(doc, fetchedWords[i]);
         console.log(newQuiz);
         if (newQuiz.definition == "") {
           // definitionをフェッチできなかった 別の単語で再取得処理を入れる必要あり
-          throw new Error(`Failed to fetch definition. ${fetchedWords[i]}`);
+          console.log(`Failed to fetch definition. ${fetchedWords[i]}`);
+          if(source !== "Random"){
+            // 出題リストから1つ取得しなおす
+            if(wordsMyList.length < 1){
+              throw new Error("Source of Question is too short");
+            }
+            fetchedWords[i] = wordsMyList.splice(Math.floor(Math.random() * wordsMyList.length), 1)[0];
+          } else {
+            // ランダムに1つ取得しなおす
+            while(true){
+              const newWord = (await fetchRandomWords(1, "Random"))[0];
+              if(fetchedWords.some((v) => v == newWord)){
+                continue;
+              }
+              fetchedWords[i] = newWord;
+              break;
+            }
+          }
+          i--;
+          continue;
+          // throw new Error(`Failed to fetch definition. ${fetchedWords[i]}`);
         }
         newQuizSet.push(newQuiz);
         if (VITE_ADD_LS_QUIZ) {
@@ -178,7 +220,7 @@ function Game() {
   }
 
   // RandoAPIからランダムな単語をフェッチ
-  async function fetchRandomWords(num: number) {
+  async function fetchRandomWords(num: number, source: string) {
     try {
       const resRaw = await fetch("https://random-word-api.vercel.app/api?words=" + num);
       const res:string[] = JSON.parse( await resRaw.text() );
@@ -362,6 +404,14 @@ function Game() {
     setNumWords(num);
   }
 
+  // 出題ソースの選択イベント
+  function handleChangeQuizSource(e: any) {
+    const source = e.target.value as string;
+    setQuizSource(source);
+    // if(source !==  "Random")
+    //   console.log(localStorage.getItem(source));
+  }
+
   // リロード エラー時に使う
   function reload() {
     window.location.reload();
@@ -476,6 +526,22 @@ function Game() {
             </Typography>
             <Divider/>
             <Stack spacing={2} direction="row" sx={{justifyContent: 'center', alignItems: 'center'}}>
+              <TextField
+                select
+                sx={{ m: 1, width: '15ch' }}
+                id="question-source"
+                label="Question Source"
+                defaultValue={"Random"}
+                value={quizSource}
+                onChange={handleChangeQuizSource}
+              >
+                <MenuItem value={"Random"}>Random</MenuItem>
+                {
+                  quizSourceList.map((v,i)=>{
+                    return <MenuItem value={v} key={i}>{v}</MenuItem>
+                  })
+                }
+              </TextField>
               <TextField 
                 sx={{ m: 1, width: '20ch' }}
                 id="outlined-basic" 
@@ -486,7 +552,7 @@ function Game() {
               <Button 
                 style={{textTransform:"none"}}
                 variant="contained"
-                onClick={()=>{handleClickStart(numWords);}}
+                onClick={()=>{handleClickStart(numWords, quizSource);}}
               >
                 Start
               </Button>
