@@ -3,6 +3,7 @@ import { ThemeContext } from "../../contexts/ThemeContext.tsx";
 import TfTable from "../../components/TfTable/";
 import classes from "./index.module.css";
 import CircularProgressWithLabel from "../../components/CircularProgressWithLabel";
+import formatDate from "../../util/formatDate.tsx";
 
 import {
   Stack,
@@ -16,6 +17,7 @@ import {
   Grid2 as Grid,
 } from "@mui/material";
 import { DictionaryContext } from "../../contexts/DictionaryContext/index.ts";
+import { HistoryContext } from "../../contexts/HistoryContext/HistoryContext.tsx";
 
 // 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
 const VITE_ADD_LS_QUIZ: boolean = false;
@@ -30,6 +32,13 @@ type Dictionary = {
 
 function Game() {
   const { dictionaries } = useContext(DictionaryContext);
+  const { history, addHistory } = useContext(HistoryContext);
+
+  // TODO:履歴機能
+  const date = new Date();
+  console.log(formatDate(date));
+  console.log("history ", history);
+  addHistory();
 
   // ステート：ロード中
   const [isLoading, setIsLoading] = useState<boolean>(false);

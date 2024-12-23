@@ -1,4 +1,4 @@
-import React from "react";
+import {createContext} from "react";
 import { defaultWordsForToeic600 } from "./defaultWordsForToeic600";
 
 export type DictionaryContextType = {
@@ -9,7 +9,7 @@ export type DictionaryContextType = {
   removeDictionary: (title: string) => void;
 };
 
-export const DictionaryContext = React.createContext<DictionaryContextType>({
+export const DictionaryContext = createContext<DictionaryContextType>({
   dictionaries: {
     "TOEIC 600": defaultWordsForToeic600,
   },

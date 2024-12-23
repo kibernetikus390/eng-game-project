@@ -9,6 +9,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 
 import { ThemeContextProvider } from "./providers/ThemeContextProvider.tsx";
 import { DictionaryContextProvider } from "./providers/DictionaryContextProvider.tsx";
+import { HistoryContextProvider } from "./contexts/HistoryContext/HistoryContextProvider";
 
 function ENGGameRoutes() {
   return (
@@ -41,8 +42,10 @@ function App() {
   return (
     <ThemeContextProvider>
       <DictionaryContextProvider>
-        <CssBaseline />
-        <ENGGameRoutes />
+        <HistoryContextProvider>
+          <CssBaseline />
+          <ENGGameRoutes />
+        </HistoryContextProvider>
       </DictionaryContextProvider>
     </ThemeContextProvider>
   );
