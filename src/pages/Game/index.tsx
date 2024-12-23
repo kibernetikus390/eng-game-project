@@ -38,26 +38,36 @@ function Game() {
   // 選択肢用の追加の出題リスト
   const [extraSet, setExtraSet] = useState<Dictionary[]>([]);
   // ↑の数。とりあえず定数で
-  const numExtraQuizSet = 4;
+  const numExtraQuizSet = 10;
   // 選択肢
   const [options, setOptions] = useState<Dictionary[]>([]);
   // 選択肢内の、正答のインデックス
   const [correctOptionIndex, setCorrectOptionIndex] = useState<number>(0);
   // 正誤表
   const [tfTable, setTfTable] = useState<boolean[]>([]);
-  const {theme, toggleTheme} = useContext(ThemeContext);
+  // ライトモード・ダークモード
+  const {theme} = useContext(ThemeContext);
+  // 出題の最大数
+  let maxQuiz = 50;
+  
+  if(quizSource!="Random"){
+    const ls = localStorage.getItem(quizSource);
+    if(ls == null){
+      return;
+    }
+    maxQuiz = Math.min(50, JSON.parse(ls).length);
+
+    if(numWords > maxQuiz){
+      setNumWords(maxQuiz);
+    }
+  }
 
   useEffect(()=>{
-    let testList = localStorage.getItem("TOEIC 600");
-    let listArr:string[] = [];
-    // if(testList === null){
-      listArr = ["accommodate","accounting","actually","additional","administration","advance","advertising","afford","analyst","annual","appear","applicant","appreciate","architect","assess","attend","attract","benefit","budget","cater","colleague","compare","complicated","concern","conference","consumer","contract","current","decide","delay","delighted","department","designate","develop","donate","eliminate","encourage","enroll","estate","exceed","except","executive","exhibit","expect","expertise","explain","facility","fail","familiar","feature","fee","figure","frequent","further","handle","identification","improve","include","inquire","instantly","insurance","invest","invite","invoice","involve","luggage","manufacture","miss","notice","offer","owe","participate","passenger","plenty","preservation","previous","proceed","promote","prosperous","provide","publicity","recommend","refund","remind","remove","replacement","representative","reservation","responsible","result","review","severe","shipment","shortage","store","survey","transportation","voucher","workplace","workshop",];
-    // } else {
-    //   listArr = JSON.parse(testList);
-    // }
-    localStorage.setItem("TOEIC 600",JSON.stringify(listArr));
-    localStorage.setItem("MyLists", JSON.stringify(["TOEIC 600"]));
-    setQuizSourceList(["TOEIC 600"]);
+    const ls = localStorage.getItem("MyLists");
+    if(ls == null){
+      return
+    }
+    setQuizSourceList(JSON.parse(ls));
   },[]);
 
   // 選択肢のクリックイベント 正誤判定して進行する
@@ -121,7 +131,7 @@ function Game() {
         newQuizSet = await generateQuizSet(num, source, setLoadingCounter);
         setQuizSet(() => [...newQuizSet as Dictionary[]]);
         // 選択肢用の追加リスト
-        newExtraSet = await generateQuizSet(numExtraQuizSet, source, setLoadingCounter);
+        newExtraSet = await generateQuizSet(numExtraQuizSet, "Random", setLoadingCounter);
         setExtraSet(() => [...newExtraSet as Dictionary[]]);
       } catch (error) {
         alert(error);
@@ -163,7 +173,7 @@ function Game() {
       let wordsMyList: string[] = [];
       const newQuizSet: Dictionary[] = [];
       if(source === "Random"){
-        fetchedWords = await fetchRandomWords(num, "Random");
+        fetchedWords = await fetchRandomWords(num);
       } else {
         const ls = localStorage.getItem(source);
         if(ls === null){
@@ -192,7 +202,7 @@ function Game() {
           } else {
             // ランダムに1つ取得しなおす
             while(true){
-              const newWord = (await fetchRandomWords(1, "Random"))[0];
+              const newWord = (await fetchRandomWords(1))[0];
               if(fetchedWords.some((v) => v == newWord)){
                 continue;
               }
@@ -220,7 +230,7 @@ function Game() {
   }
 
   // RandoAPIからランダムな単語をフェッチ
-  async function fetchRandomWords(num: number, source: string) {
+  async function fetchRandomWords(num: number) {
     try {
       const resRaw = await fetch("https://random-word-api.vercel.app/api?words=" + num);
       const res:string[] = JSON.parse( await resRaw.text() );
@@ -397,17 +407,18 @@ function Game() {
   }
 
   // 問題数の入力フォーム更新イベント
-  function handleNumChange(e:any){
+  function handleNumChange(e:React.ChangeEvent<HTMLInputElement>){
     let num = Number(e.target.value);
     if(num < 1) num = 1;
-    if(num > 50) num = 50;
+    if(num > maxQuiz) num = maxQuiz;
     setNumWords(num);
   }
 
   // 出題ソースの選択イベント
-  function handleChangeQuizSource(e: any) {
+  function handleChangeQuizSource(e: React.ChangeEvent<HTMLInputElement>) {
     const source = e.target.value as string;
     setQuizSource(source);
+    setNumWords(10);
     // if(source !==  "Random")
     //   console.log(localStorage.getItem(source));
   }

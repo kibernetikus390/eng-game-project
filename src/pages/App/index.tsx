@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import TestWiktionary from "../TestWiktionary";
 import TestRando from "../TestRando";
@@ -43,6 +43,18 @@ function App() {
     }
     return storedTheme;
   }
+  
+  useEffect(()=>{
+    // let testList = localStorage.getItem("TOEIC 600");
+    let listArr:string[] = [];
+    // if(testList === null){
+      listArr = ["accommodate","accounting","actually","additional","administration","advance","advertising","afford","analyst","annual","appear","applicant","appreciate","architect","assess","attend","attract","benefit","budget","cater","colleague","compare","complicated","concern","conference","consumer","contract","current","decide","delay","delighted","department","designate","develop","donate","eliminate","encourage","enroll","estate","exceed","except","executive","exhibit","expect","expertise","explain","facility","fail","familiar","feature","fee","figure","frequent","further","handle","identification","improve","include","inquire","instantly","insurance","invest","invite","invoice","involve","luggage","manufacture","miss","notice","offer","owe","participate","passenger","plenty","preservation","previous","proceed","promote","prosperous","provide","publicity","recommend","refund","remind","remove","replacement","representative","reservation","responsible","result","review","severe","shipment","shortage","store","survey","transportation","voucher","workplace","workshop",];
+    // } else {
+    //   listArr = JSON.parse(testList);
+    // }
+    localStorage.setItem("TOEIC 600",JSON.stringify(listArr));
+    localStorage.setItem("MyLists", JSON.stringify(["TOEIC 600"]));
+  },[]);
 
   return (
     <ThemeProvider theme={theme==="light"?lightTheme:darkTheme}>
