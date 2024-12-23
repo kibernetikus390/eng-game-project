@@ -7,8 +7,10 @@ function TestRando() {
   async function handleSubmit() {
     console.log("clicked. num:" + numWords);
     try {
-      const resRaw = await fetch("https://random-word-api.vercel.app/api?words=" + numWords);
-      const res:string[] = JSON.parse( await resRaw.text() );
+      const resRaw = await fetch(
+        "https://random-word-api.vercel.app/api?words=" + numWords,
+      );
+      const res: string[] = JSON.parse(await resRaw.text());
       setWords(res);
     } catch (error) {
       alert("Failed to fetch from Rando: " + error);

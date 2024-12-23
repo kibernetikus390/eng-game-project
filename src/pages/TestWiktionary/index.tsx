@@ -25,16 +25,18 @@ function TestWiktionary() {
     }
     // テキスト部分を取得
     //definition = $doc.find(`[data-mw-anchor="${part}"]`).next().next().children().first().text().trim();
-    doc.querySelector(`[data-mw-anchor="${part}"]`)?.nextElementSibling?.nextElementSibling?.childNodes.forEach((v)=>{
-      if (definition != "") {
-        return;
-      }
-      const txt = v.textContent?.split(/\[/)[0].trim();
-      if (txt == "" || txt == undefined) {
-        return;
-      }
-      definition = txt;
-    });
+    doc
+      .querySelector(`[data-mw-anchor="${part}"]`)
+      ?.nextElementSibling?.nextElementSibling?.childNodes.forEach((v) => {
+        if (definition != "") {
+          return;
+        }
+        const txt = v.textContent?.split(/\[/)[0].trim();
+        if (txt == "" || txt == undefined) {
+          return;
+        }
+        definition = txt;
+      });
     if (definition == "") {
       console.log(
         part + ": definition found, but failed to clip certain information.",
@@ -46,7 +48,9 @@ function TestWiktionary() {
 
   const fetchTest = async (title: string, part: string) => {
     await new Promise((resolve) => setTimeout(resolve, 100));
-    const resRaw = await fetch(`https://en.wiktionary.org/w/api.php?action=query&format=json&origin=*&prop=extracts&titles=${title}&callback=&formatversion=2`);
+    const resRaw = await fetch(
+      `https://en.wiktionary.org/w/api.php?action=query&format=json&origin=*&prop=extracts&titles=${title}&callback=&formatversion=2`,
+    );
     const res = await resRaw.text();
     const resJSON = await JSON.parse(res.slice(5, -1));
     const parser = new DOMParser();
@@ -60,12 +64,12 @@ function TestWiktionary() {
     let deleteNextH2Native: boolean = false;
     let deletedH2Native: boolean = false;
     let foundEnglishH2Native: boolean = false;
-    docNative.querySelectorAll("h2").forEach((e)=>{
+    docNative.querySelectorAll("h2").forEach((e) => {
       if (deletedH2Native) return;
       if (deleteNextH2Native) {
-        let elmToDelete:Element|null = e;
-        while(elmToDelete) {
-          const nextElm:Element|null= elmToDelete.nextElementSibling;
+        let elmToDelete: Element | null = e;
+        while (elmToDelete) {
+          const nextElm: Element | null = elmToDelete.nextElementSibling;
           elmToDelete.remove();
           elmToDelete = nextElm;
         }
@@ -84,9 +88,13 @@ function TestWiktionary() {
     }
 
     // 説明文の中にdd,dl要素(類義語等)があると後々邪魔なので削除しておく
-    docNative.querySelectorAll("dd").forEach((e)=>{e.remove()});
+    docNative.querySelectorAll("dd").forEach((e) => {
+      e.remove();
+    });
     // リスト内にまたリストが登場することがある(用途の限定など)
-    docNative.querySelectorAll("li ol, li ul").forEach((e)=>{e.remove()});
+    docNative.querySelectorAll("li ol, li ul").forEach((e) => {
+      e.remove();
+    });
 
     // 捜索する品詞
     let partsToSearch: string[] = [];

@@ -1,7 +1,7 @@
 .resultBox {
-    overflow: scroll;
-    overflow-x: hidden; /* 横スクロールバーを非表示 */
-    height: 50vh;
-    width: 100%; /* 横幅を親要素に収める */
-    max-width: 100%; /* 最大幅を制限 */
+  overflow: scroll;
+  overflow-x: hidden; /* 横スクロールバーを非表示 */
+  height: 50vh;
+  width: 100%; /* 横幅を親要素に収める */
+  max-width: 100%; /* 最大幅を制限 */
 }
