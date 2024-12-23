@@ -7,18 +7,11 @@ import { defaultWordsForToeic600 } from "../contexts/DictionaryContext/defaultWo
 
 const LOCAL_STORAGE_DICTIONARIES_KEY = "dictionaries";
 
-export function DictionaryContextProvider({
-  children,
-  ...props
-}: React.PropsWithChildren) {
-  const [dictionaries, setDictionaries] = useState<
-    DictionaryContextType["dictionaries"]
-  >({});
+export function DictionaryContextProvider({children, ...props}: React.PropsWithChildren) {
+  const [dictionaries, setDictionaries] = useState<DictionaryContextType["dictionaries"]>({});
 
   useEffect(() => {
-    const localStorageDictionaries = localStorage.getItem(
-      LOCAL_STORAGE_DICTIONARIES_KEY,
-    );
+    const localStorageDictionaries = localStorage.getItem(LOCAL_STORAGE_DICTIONARIES_KEY);
     if (localStorageDictionaries) {
       setDictionaries(
         JSON.parse(
@@ -37,6 +30,13 @@ export function DictionaryContextProvider({
     );
   }, []);
 
+  function setLocalStorage(val:DictionaryContextType["dictionaries"]){
+    localStorage.setItem(
+      LOCAL_STORAGE_DICTIONARIES_KEY,
+      JSON.stringify(val),
+    );
+  }
+
   const addWords = useCallback<DictionaryContextType["addWords"]>(
     (key, values) => {
       setDictionaries((prev) => {
@@ -47,11 +47,7 @@ export function DictionaryContextProvider({
             .concat(values),
         };
 
-        localStorage.setItem(
-          LOCAL_STORAGE_DICTIONARIES_KEY,
-          JSON.stringify(newDictionaries),
-        );
-
+        setLocalStorage(newDictionaries);
         return newDictionaries;
       });
     },
@@ -66,11 +62,7 @@ export function DictionaryContextProvider({
           [key]: (prev[key] ?? []).filter((x) => x !== value),
         };
 
-        localStorage.setItem(
-          LOCAL_STORAGE_DICTIONARIES_KEY,
-          JSON.stringify(newDictionaries),
-        );
-
+        setLocalStorage(newDictionaries);
         return newDictionaries;
       });
     },
@@ -85,11 +77,7 @@ export function DictionaryContextProvider({
           [title]: defaultWords,
         };
 
-        localStorage.setItem(
-          LOCAL_STORAGE_DICTIONARIES_KEY,
-          JSON.stringify(newDictionaries),
-        );
-
+        setLocalStorage(newDictionaries);
         return newDictionaries;
       });
     },
@@ -99,7 +87,12 @@ export function DictionaryContextProvider({
   const removeDictionary = useCallback<
     DictionaryContextType["removeDictionary"]
   >((title) => {
-    // TODO: implement removeDictionary function
+    setDictionaries((prev)=>{
+      const newDictionaries = {...prev};
+      delete newDictionaries[title];
+      setLocalStorage(newDictionaries);
+      return newDictionaries;
+    });
   }, []);
 
   return (

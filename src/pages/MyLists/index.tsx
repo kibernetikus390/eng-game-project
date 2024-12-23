@@ -55,7 +55,7 @@ function MyLists() {
 
   function handleClickDeleteList(listName: string) {
     removeDictionary(listName);
-    setSelectList("");
+    setSelectList("create-new-list");
   }
 
   function handleChangeSelectList(name: string) {
@@ -169,7 +169,7 @@ function MyLists() {
                 Delete List
               </Button>
             </Stack>
-            {selectList != "create-new-list" &&
+            {selectList != "create-new-list" && selectList != "" &&
             dictionaries[selectList]?.length != 0 ? (
               <Container
                 sx={{
