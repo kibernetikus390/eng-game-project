@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import {
   Container,
   Divider,
@@ -22,22 +22,44 @@ export default function History() {
   const { isWordInNigateList, addWords, removeWord } =
     useContext(DictionaryContext);
   const { history } = useContext(HistoryContext);
-  const checkedArr = genCheckedArr();
+  const [checkedArr, setCheckedArr] = useState<boolean[]>(genCheckedArr());
 
   function genCheckedArr() {
-    const newArr = Array(history.length);
+    const newArr = Array(history.length).fill(false);
     for (let i = 0; i < history.length; i++) {
-      newArr[i] = isWordInNigateList(history[i].title);
+      newArr[i] = isWordInNigateList({
+        title: history[i].title,
+        part: history[i].part,
+        definition: history[i].def,
+      });
     }
     return newArr;
   }
 
-  function handleClickCheckBox(checked: boolean, index: number) {
+  function handleClickCheckBox(checked: boolean, i: number) {
     if (checked) {
-      removeWord(KEY_NIGATE_LIST, history[index].title);
+      removeWord(KEY_NIGATE_LIST, {
+        title: history[i].title,
+        part: history[i].part,
+        definition: history[i].def,
+      });
     } else {
-      addWords(KEY_NIGATE_LIST, [history[index].title]);
+      addWords(KEY_NIGATE_LIST, [
+        {
+          title: history[i].title,
+          part: history[i].part,
+          definition: history[i].def,
+        },
+      ]);
     }
+    const newChecked = [...checkedArr];
+    for(let j = 0; j < newChecked.length; j++){
+      if(history[i].title == history[j].title && history[i].part == history[j].part && history[i].def == history[j].def) {
+        console.log(j);
+        newChecked[j] = !checked;
+      }
+    }
+    setCheckedArr(newChecked);
   }
 
   return (
@@ -57,63 +79,63 @@ export default function History() {
         </Container>
       ) : (
         <Container maxWidth="lg">
-        <Stack spacing={2}>
-          <Typography variant="h5">History</Typography>
-          <Divider />
-          <TableContainer component={Paper} sx={{ maxHeight: "70vh" }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell align="center" sx={{ fontSize: "small" }}>
-                    Add Weak list
-                  </TableCell>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Part</TableCell>
-                  <TableCell>Definition</TableCell>
-                  <TableCell>Date</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {history.map((v, i) => (
-                  <TableRow key={i}>
-                    <TableCell key={i + "weak"}>
-                      <Checkbox
-                        checked={checkedArr[i]}
-                        onChange={() => {
-                          handleClickCheckBox(checkedArr[i], i);
-                        }}
-                      />
+          <Stack spacing={2}>
+            <Typography variant="h5">History</Typography>
+            <Divider />
+            <TableContainer component={Paper} sx={{ maxHeight: "70vh" }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell align="center" sx={{ fontSize: "small" }}>
+                      Add Weak list
                     </TableCell>
-                    <TableCell
-                      sx={{ color: getCorrectWrongColor(v.correct) }}
-                      key={i + "title"}
-                    >
-                      {v.title}
-                    </TableCell>
-                    <TableCell
-                      sx={{ color: getCorrectWrongColor(v.correct) }}
-                      key={i + "part"}
-                    >
-                      {v.part}
-                    </TableCell>
-                    <TableCell
-                      sx={{ color: getCorrectWrongColor(v.correct) }}
-                      key={i + "def"}
-                    >
-                      {v.def}
-                    </TableCell>
-                    <TableCell
-                      sx={{ color: getCorrectWrongColor(v.correct) }}
-                      key={i + "date"}
-                    >
-                      {v.date}
-                    </TableCell>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Part</TableCell>
+                    <TableCell>Definition</TableCell>
+                    <TableCell>Date</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Stack>
+                </TableHead>
+                <TableBody>
+                  {history.map((v, i) => (
+                    <TableRow key={i}>
+                      <TableCell key={i + "weak"} align="center">
+                        <Checkbox
+                          checked={checkedArr[i]}
+                          onChange={() => {
+                            handleClickCheckBox(checkedArr[i], i);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell
+                        sx={{ color: getCorrectWrongColor(v.correct) }}
+                        key={i + "title"}
+                      >
+                        {v.title}
+                      </TableCell>
+                      <TableCell
+                        sx={{ color: getCorrectWrongColor(v.correct) }}
+                        key={i + "part"}
+                      >
+                        {v.part}
+                      </TableCell>
+                      <TableCell
+                        sx={{ color: getCorrectWrongColor(v.correct) }}
+                        key={i + "def"}
+                      >
+                        {v.def}
+                      </TableCell>
+                      <TableCell
+                        sx={{ color: getCorrectWrongColor(v.correct) }}
+                        key={i + "date"}
+                      >
+                        {v.date}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Stack>
         </Container>
       )}
     </Container>
