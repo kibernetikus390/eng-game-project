@@ -1,44 +1,28 @@
 import { useEffect, useState, useContext } from "react";
-import { ThemeContext } from "../../contexts/ThemeContext.tsx";
-import TfTable from "../../components/TfTable/";
-import classes from "./index.module.css";
-import CircularProgressWithLabel from "../../components/CircularProgressWithLabel";
-import formatDate from "../../util/formatDate.tsx";
-
-import {
-  Stack,
-  Box,
-  Typography,
-  Container,
-  TextField,
-  Button,
-  Divider,
-  MenuItem,
-  Grid2 as Grid,
-} from "@mui/material";
+import { ThemeContext } from "../../contexts/Theme/index.tsx";
+import { Container } from "@mui/material";
 import { DictionaryContext } from "../../contexts/DictionaryContext/index.ts";
-import { HistoryContext } from "../../contexts/HistoryContext/HistoryContext.tsx";
+import { HistoryContext } from "../../contexts/HistoryContext/index.tsx";
+import handleClickOption from "./methods/handleClickOption.tsx";
+import GameStart from "./GameStart.tsx";
+import GameResult from "./GameResult.tsx";
+import GameMain from "./GameMain.tsx";
+import GameLoading from "./GameLoading.tsx";
 
 // 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
-const VITE_ADD_LS_QUIZ: boolean = false;
+const VITE_ADD_LS_QUIZ: boolean = true;
 // 出題に、ローカルストレージにキャッシュした問題を使う
-const VITE_USE_LS_QUIZ: boolean = false;
+const VITE_USE_LS_QUIZ: boolean = true;
 
-type Dictionary = {
+export type Dictionary = {
   title: string;
   part: string;
   definition: string;
 };
 
 function Game() {
-  const { dictionaries } = useContext(DictionaryContext);
-  const { history, addHistory } = useContext(HistoryContext);
-
-  // TODO:履歴機能
-  const date = new Date();
-  console.log(formatDate(date));
-  console.log("history ", history);
-  addHistory();
+  const { dictionaries, getLength } = useContext(DictionaryContext);
+  const { addHistory } = useContext(HistoryContext);
 
   // ステート：ロード中
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -80,24 +64,22 @@ function Game() {
     }
   }
 
+  // TODO: 他のメソッドも外化する？
   // 選択肢のクリックイベント 正誤判定して進行する
-  function handleClickOption(optionIndex: number) {
-    if (optionIndex == correctOptionIndex) {
-      // console.log("correct");
-      const newTfTable = tfTable;
-      newTfTable[gameIndex] = true;
-      setTfTable(newTfTable);
-    } else {
-      // console.log("wrong");
-    }
-    setGameIndex((i) => i + 1);
-    if (gameIndex < quizSet.length - 1) {
-      return;
-    }
-    // リザルト画面へ
-    setIsPlaying(false);
-    setIsResult(true);
-  }
+  const memHandleClickOption = (clickedOptionIndex: number) => {
+    handleClickOption(
+      clickedOptionIndex,
+      correctOptionIndex,
+      gameIndex,
+      tfTable,
+      setTfTable,
+      quizSet,
+      addHistory,
+      setGameIndex,
+      setIsPlaying,
+      setIsResult,
+    );
+  };
 
   // スタートボタンのクリックイベント
   async function handleClickStart(num: number, source: string) {
@@ -455,8 +437,6 @@ function Game() {
     const source = e.target.value as string;
     setQuizSource(source);
     setNumWords(10);
-    // if(source !==  "Random")
-    //   console.log(localStorage.getItem(source));
   }
 
   // リロード エラー時に使う
@@ -472,216 +452,39 @@ function Game() {
   return (
     <Container sx={{ height: "100%" }}>
       {isLoading ? (
-        <Container
-          maxWidth="sm"
-          sx={{
-            height: "100%",
-            display: "flex",
-            textAlign: "center",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Box>
-            <Typography variant="h3">loading...</Typography>
-            <CircularProgressWithLabel
-              sx={{ m: "1em" }}
-              size={"4rem"}
-              value={(loadingCounter / (numWords + numExtraQuizSet)) * 100}
-            />
-          </Box>
-        </Container>
+        <GameLoading
+          loadingCounter={loadingCounter}
+          numWords={numWords}
+          numExtraQuizSet={numExtraQuizSet}
+        />
       ) : isPlaying ? (
-        <Container
-          maxWidth="sm"
-          sx={{
-            height: "90%",
-            display: "flex",
-            textAlign: "center",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Stack spacing={2}>
-            <TfTable arr={tfTable} gameIndex={gameIndex} />
-            <Typography variant="h3">{quizSet[gameIndex].title}</Typography>
-            <Stack spacing={2}>
-              {options.map((v, i) => {
-                return (
-                  <Typography
-                    variant="subtitle1"
-                    key={i}
-                    align={"left"}
-                    onClick={() => {
-                      handleClickOption(i);
-                    }}
-                    sx={{
-                      borderRadius: 2,
-                      boxShadow: 2,
-                      background: theme === "dark" ? "#333" : "#FFF",
-                      p: 1,
-                    }}
-                  >
-                    {`(${v.part}) ${v.definition}`}
-                  </Typography>
-                );
-              })}
-            </Stack>
-          </Stack>
-        </Container>
+        <GameMain
+          tfTable={tfTable}
+          gameIndex={gameIndex}
+          quizSet={quizSet}
+          options={options}
+          memHandleClickOption={memHandleClickOption}
+          theme={theme}
+        />
       ) : isResult ? (
-        <Container
-          maxWidth="md"
-          sx={{
-            height: "90%",
-            display: "flex",
-            textAlign: "center",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Stack spacing={2}>
-            <Typography variant="h3">
-              {`${correctNum} / ${quizSet.length}`}
-            </Typography>
-            <Stack
-              spacing={1}
-              direction="row"
-              sx={{
-                textAlign: "center",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Button
-                style={{ textTransform: "none" }}
-                variant="outlined"
-                onClick={handleClickBack}
-              >
-                Back
-              </Button>
-              {tfTable.some((v) => !v) ? (
-                <Button
-                  style={{ textTransform: "none" }}
-                  variant="outlined"
-                  onClick={handleClickRevenge}
-                >
-                  Retry Mistakes
-                </Button>
-              ) : null}
-            </Stack>
-            <Divider />
-            <Container
-              className={classes.resultBox}
-              sx={{
-                borderRadius: 1,
-                boxShadow: 1,
-                background: theme === "dark" ? "#252525" : "#FEFEFE",
-                p: 1,
-              }}
-            >
-              <Stack spacing={2}>
-                {quizSet.map((v, i) => {
-                  const c: string = tfTable[i] ? "success" : "error";
-                  return (
-                    <Grid
-                      key={i + "p"}
-                      container
-                      spacing={1}
-                      sx={{
-                        borderRadius: 1,
-                        boxShadow: 1,
-                        background: theme === "dark" ? "#333" : "#FFF",
-                        p: 1,
-                        textAlign: "left",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Grid size={11} key={i + "t"}>
-                        <Typography
-                          color={c}
-                          variant="h5"
-                        >{`${v.title}`}</Typography>
-                        <Typography
-                          color={c}
-                          variant="subtitle1"
-                        >{`(${v.part}) ${v.definition}`}</Typography>
-                      </Grid>
-                      <Grid size={1} key={i + "d"}></Grid>
-                    </Grid>
-                  );
-                })}
-              </Stack>
-            </Container>
-          </Stack>
-        </Container>
+        <GameResult
+          correctNum={correctNum}
+          quizSet={quizSet}
+          handleClickBack={handleClickBack}
+          handleClickRevenge={handleClickRevenge}
+          theme={theme}
+          tfTable={tfTable}
+        />
       ) : (
-        <Container
-          maxWidth="sm"
-          sx={{
-            height: "90%",
-            display: "flex",
-            textAlign: "center",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Stack spacing={2}>
-            <Typography
-              variant="h2"
-              sx={{
-                textAlign: "center",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              Wiktionary Game
-            </Typography>
-            <Divider />
-            <Stack
-              spacing={2}
-              direction="row"
-              sx={{ justifyContent: "center", alignItems: "center" }}
-            >
-              <TextField
-                select
-                sx={{ m: 1, width: "15ch" }}
-                id="question-source"
-                label="Question Source"
-                defaultValue={"Random"}
-                value={quizSource}
-                onChange={handleChangeQuizSource}
-              >
-                <MenuItem value={"Random"}>Random</MenuItem>
-                {Object.keys(dictionaries).map((v, i) => {
-                  return (
-                    <MenuItem value={v} key={i}>
-                      {v}
-                    </MenuItem>
-                  );
-                })}
-              </TextField>
-              <TextField
-                sx={{ m: 1, width: "20ch" }}
-                id="outlined-basic"
-                label="Number of Questions"
-                type="number"
-                variant="outlined"
-                value={numWords}
-                onChange={handleNumChange}
-              />
-              <Button
-                style={{ textTransform: "none" }}
-                variant="contained"
-                onClick={() => {
-                  handleClickStart(numWords, quizSource);
-                }}
-              >
-                Start
-              </Button>
-            </Stack>
-          </Stack>
-        </Container>
+        <GameStart
+          quizSource={quizSource}
+          handleChangeQuizSource={handleChangeQuizSource}
+          dictionaries={dictionaries}
+          getLength={getLength}
+          numWords={numWords}
+          handleNumChange={handleNumChange}
+          handleClickStart={handleClickStart}
+        />
       )}
     </Container>
   );

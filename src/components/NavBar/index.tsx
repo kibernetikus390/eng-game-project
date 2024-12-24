@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { ThemeContext } from "../../contexts/ThemeContext";
+import { ThemeContext } from "../../contexts/Theme";
 import classes from "./index.module.css";
 
 import { AppBar, Box, Button, Divider, Stack, IconButton } from "@mui/material";
@@ -49,6 +49,16 @@ function NavBar(props: React.PropsWithChildren) {
             }}
           >
             My lists
+          </Button>
+          <Divider orientation="vertical" flexItem />
+          <Button
+            style={{ textTransform: "none" }}
+            sx={{ color: "white", borderColor: "white" }}
+            onClick={() => {
+              navigate("/history");
+            }}
+          >
+            History
           </Button>
           <Divider orientation="vertical" flexItem />
           <IconButton onClick={toggleTheme}>

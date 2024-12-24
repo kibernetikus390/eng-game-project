@@ -9,6 +9,9 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { DictionaryContext } from "../../contexts/DictionaryContext";
+import { KEY_NIGATE_LIST } from "../../providers/DictionaryContextProvider";
+
+const KEY_CREATE_NEW_LIST = "egp-create-new-list";
 
 function MyLists() {
   const {
@@ -55,12 +58,12 @@ function MyLists() {
 
   function handleClickDeleteList(listName: string) {
     removeDictionary(listName);
-    setSelectList("create-new-list");
+    setSelectList(KEY_CREATE_NEW_LIST);
   }
 
   function handleChangeSelectList(name: string) {
     setSelectList(name);
-    if (name != "create-new-list") {
+    if (name != KEY_CREATE_NEW_LIST) {
       setNameNewList("");
     }
   }
@@ -70,10 +73,10 @@ function MyLists() {
   }
 
   const activeAddButton =
-    (selectList == "create-new-list" &&
+    (selectList == KEY_CREATE_NEW_LIST &&
       nameNewList.trim() != "" &&
       wordToAdd.trim() != "") ||
-    (selectList != "create-new-list" && wordToAdd.trim() != "");
+    (selectList != KEY_CREATE_NEW_LIST && wordToAdd.trim() != "");
 
   return (
     <Container
@@ -109,7 +112,7 @@ function MyLists() {
                   handleChangeSelectList(e.target.value as string);
                 }}
               >
-                <MenuItem value="create-new-list">Create New List</MenuItem>
+                <MenuItem value={KEY_CREATE_NEW_LIST}>Create New List</MenuItem>
                 {listOfMyLists.map((v, i) => {
                   return (
                     <MenuItem value={v} key={i}>
@@ -118,7 +121,7 @@ function MyLists() {
                   );
                 })}
               </TextField>
-              {selectList == "create-new-list" ? (
+              {selectList == KEY_CREATE_NEW_LIST ? (
                 <TextField
                   autoComplete="off"
                   sx={{ m: 1, width: "15ch" }}
@@ -161,7 +164,7 @@ function MyLists() {
                   handleClickDeleteList(selectList);
                 }}
                 disabled={
-                  selectList == "create-new-list" || selectList == ""
+                  [KEY_CREATE_NEW_LIST, "", KEY_NIGATE_LIST].includes(selectList)
                     ? true
                     : false
                 }
@@ -169,7 +172,7 @@ function MyLists() {
                 Delete List
               </Button>
             </Stack>
-            {selectList != "create-new-list" && selectList != "" &&
+            {selectList != KEY_CREATE_NEW_LIST && selectList != "" &&
             dictionaries[selectList]?.length != 0 ? (
               <Container
                 sx={{

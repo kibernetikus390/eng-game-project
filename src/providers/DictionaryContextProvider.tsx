@@ -6,6 +6,7 @@ import {
 import { defaultWordsForToeic600 } from "../contexts/DictionaryContext/defaultWordsForToeic600.ts";
 
 const LOCAL_STORAGE_DICTIONARIES_KEY = "dictionaries";
+export const KEY_NIGATE_LIST = "Weak";
 
 export function DictionaryContextProvider({children, ...props}: React.PropsWithChildren) {
   const [dictionaries, setDictionaries] = useState<DictionaryContextType["dictionaries"]>({});
@@ -21,6 +22,7 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
       return;
     }
     const defaultDictionaries = {
+      KEY_NIGATE_LIST: [],
       "TOEIC 600": defaultWordsForToeic600,
     };
     setDictionaries(defaultDictionaries);
@@ -39,6 +41,7 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
 
   const addWords = useCallback<DictionaryContextType["addWords"]>(
     (key, values) => {
+      console.log("addWords("+key+", "+values);
       setDictionaries((prev) => {
         const newDictionaries = {
           ...prev,
@@ -95,6 +98,14 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
     });
   }, []);
 
+  const getLength = (key:string) => {
+    return dictionaries[key].length;
+  }
+
+  const isWordInNigateList = (title:string) => {
+    return dictionaries[KEY_NIGATE_LIST].some((v)=>v==title) ? true : false;
+  }
+
   return (
     <DictionaryContext.Provider
       value={{
@@ -103,6 +114,8 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
         removeWord,
         addDictionary,
         removeDictionary,
+        getLength,
+        isWordInNigateList,
       }}
       {...props}
     >

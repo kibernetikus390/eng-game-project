@@ -6,8 +6,9 @@ export type HistoryContextType = {
         part: string;
         def: string;
         date: string;
+        correct: boolean;
     }[];
-    addHistory: (/*title: string, part: string, def: string, date: string*/) => void;
+    addHistory: (title: string, part: string, def: string, correct: boolean) => void;
 };
 
 export const HistoryContext = createContext<HistoryContextType>({

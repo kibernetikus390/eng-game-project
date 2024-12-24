@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ThemeContext } from "../contexts/ThemeContext";
+import { ThemeContext } from "../contexts/Theme";
 import { ThemeProvider } from "@emotion/react";
 import { createTheme } from "@mui/material";
 
@@ -8,10 +8,7 @@ const darkTheme = createTheme({
     mode: "dark",
     background: {
       default: "#222222",
-    },
-    // primary: {
-    //   main: '#111111',
-    // },
+    }
   },
 });
 
