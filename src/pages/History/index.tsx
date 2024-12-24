@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import {
   Container,
+  Divider,
   Typography,
   Paper,
   Table,
@@ -10,6 +11,7 @@ import {
   TableCell,
   TableBody,
   Checkbox,
+  Stack,
 } from "@mui/material";
 import { HistoryContext } from "../../contexts/HistoryContext";
 import { DictionaryContext } from "../../contexts/DictionaryContext";
@@ -54,10 +56,12 @@ export default function History() {
           <Typography variant="body1">Play some game!</Typography>
         </Container>
       ) : (
-        <Container>
+        <Container maxWidth="lg">
+        <Stack spacing={2}>
           <Typography variant="h5">History</Typography>
+          <Divider />
           <TableContainer component={Paper} sx={{ maxHeight: "70vh" }}>
-            <Table sx={{ minWidth: 650 }} aria-label="simple table">
+            <Table>
               <TableHead>
                 <TableRow>
                   <TableCell align="center" sx={{ fontSize: "small" }}>
@@ -109,6 +113,7 @@ export default function History() {
               </TableBody>
             </Table>
           </TableContainer>
+        </Stack>
         </Container>
       )}
     </Container>
