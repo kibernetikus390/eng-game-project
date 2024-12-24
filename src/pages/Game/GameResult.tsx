@@ -4,21 +4,53 @@ import {
   Container,
   Button,
   Divider,
-  Grid2 as Grid,
+  Checkbox,
 } from "@mui/material";
-import classes from "./index.module.css";
+import {
+  Paper,
+  Table,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+} from "@mui/material";
 import { Dictionary } from ".";
+import getCorrectWrongColor from "../../util/getCorrectWrongColor";
+import { useContext } from "react";
+import { DictionaryContext } from "../../contexts/DictionaryContext";
+import { KEY_NIGATE_LIST } from "../../providers/DictionaryContextProvider";
 
 type GameResultProps = {
   correctNum: number;
   quizSet: Dictionary[];
   tfTable: boolean[];
   theme: string;
-  handleClickBack: ()=>void;
-  handleClickRevenge: ()=>void;
-}
+  handleClickBack: () => void;
+  handleClickRevenge: () => void;
+};
 
-export default function GameResult(props:GameResultProps) {
+export default function GameResult(props: GameResultProps) {
+  const { isWordInNigateList, addWords, removeWord } =
+    useContext(DictionaryContext);
+  const checkedArr = genCheckedArr();
+  function genCheckedArr() {
+    const newArr = Array(props.quizSet.length);
+    for (let i = 0; i < props.quizSet.length; i++) {
+      // TODO: 苦手リストにある場合trueにする
+      newArr[i] = isWordInNigateList(props.quizSet[i].title);
+    }
+    return newArr;
+  }
+
+  function handleCheck(checked: boolean, index: number) {
+    if (checked) {
+      removeWord(KEY_NIGATE_LIST, props.quizSet[index].title);
+    } else {
+      addWords(KEY_NIGATE_LIST, [props.quizSet[index].title]);
+    }
+  }
+
   return (
     <Container
       maxWidth="md"
@@ -61,48 +93,45 @@ export default function GameResult(props:GameResultProps) {
           ) : null}
         </Stack>
         <Divider />
-        <Container
-          className={classes.resultBox}
-          sx={{
-            borderRadius: 1,
-            boxShadow: 1,
-            background: props.theme === "dark" ? "#252525" : "#FEFEFE",
-            p: 1,
-          }}
-        >
-          <Stack spacing={2}>
-            {props.quizSet.map((v, i) => {
-              const c: string = props.tfTable[i] ? "success" : "error";
-              return (
-                <Grid
-                  key={i + "p"}
-                  container
-                  spacing={1}
-                  sx={{
-                    borderRadius: 1,
-                    boxShadow: 1,
-                    background: props.theme === "dark" ? "#333" : "#FFF",
-                    p: 1,
-                    textAlign: "left",
-                    alignItems: "center",
-                  }}
-                >
-                  <Grid size={11} key={i + "t"}>
+        <TableContainer component={Paper} sx={{ maxHeight: "60vh" }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell align="center" sx={{ fontSize: "small" }}>
+                  Add Weak list
+                </TableCell>
+                <TableCell>Word</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {props.quizSet.map((v, i) => (
+                <TableRow key={i}>
+                  <TableCell key={i + "weak"} align="center">
+                    <Checkbox
+                      checked={checkedArr[i]}
+                      onClick={() => {
+                        handleCheck(checkedArr[i], i);
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: getCorrectWrongColor(props.tfTable[i]) }}
+                    key={i + "word"}
+                  >
                     <Typography
-                      color={c}
+                      color={getCorrectWrongColor(props.tfTable[i])}
                       variant="h5"
                     >{`${v.title}`}</Typography>
                     <Typography
-                      color={c}
+                      color={getCorrectWrongColor(props.tfTable[i])}
                       variant="subtitle1"
                     >{`(${v.part}) ${v.definition}`}</Typography>
-                  </Grid>
-                  <Grid size={1} key={i + "d"}></Grid>
-                </Grid>
-              );
-            })}
-          </Stack>
-        </Container>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Stack>
     </Container>
   );
