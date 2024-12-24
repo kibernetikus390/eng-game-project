@@ -10,9 +10,9 @@ import GameMain from "./GameMain.tsx";
 import GameLoading from "./GameLoading.tsx";
 
 // 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
-const VITE_ADD_LS_QUIZ: boolean = true;
+const VITE_ADD_LS_QUIZ: boolean = false;
 // 出題に、ローカルストレージにキャッシュした問題を使う
-const VITE_USE_LS_QUIZ: boolean = true;
+const VITE_USE_LS_QUIZ: boolean = false;
 
 export type Dictionary = {
   title: string;
@@ -57,7 +57,7 @@ function Game() {
 
   if (quizSource != "Random") {
     const dictionary = dictionaries[quizSource];
-    maxQuiz = Math.min(50, dictionary.length ?? 0);
+    maxQuiz = Math.min(50, dictionary.length);
 
     if (numWords > maxQuiz) {
       setNumWords(maxQuiz);
@@ -176,17 +176,18 @@ function Game() {
       if (source === "Random") {
         fetchedWords = await fetchRandomWords(num);
       } else {
-        if (!dictionary) {
-          throw new Error("no list exists");
-        }
+        const copyDic = [...dictionary];
         for (let i = 0; i < num; i++) {
-          fetchedWords.push(
-            dictionary.splice(
-              Math.floor(Math.random() * dictionary.length),
-              1,
-            )[0],
-          );
+          const newQuiz: Dictionary = copyDic.splice(
+            Math.floor(Math.random() * copyDic.length),
+            1,
+          )[0];
+          newQuizSet.push(newQuiz);
+          if (VITE_ADD_LS_QUIZ) {
+            addQuizCache(newQuiz);
+          }
         }
+        return newQuizSet;
       }
       for (let i = 0; i < fetchedWords.length; i++) {
         const doc: Document = await fetchWiktionary(fetchedWords[i]);
@@ -203,7 +204,7 @@ function Game() {
             fetchedWords[i] = dictionary.splice(
               Math.floor(Math.random() * dictionary.length),
               1,
-            )[0];
+            )[0].title;
           } else {
             // ランダムに1つ取得しなおす
             while (true) {
@@ -454,8 +455,7 @@ function Game() {
       {isLoading ? (
         <GameLoading
           loadingCounter={loadingCounter}
-          numWords={numWords}
-          numExtraQuizSet={numExtraQuizSet}
+          numQuizAndExtra={numWords + numExtraQuizSet}
         />
       ) : isPlaying ? (
         <GameMain

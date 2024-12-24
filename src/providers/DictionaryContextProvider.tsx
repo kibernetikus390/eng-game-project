@@ -3,7 +3,8 @@ import {
   DictionaryContext,
   DictionaryContextType,
 } from "../contexts/DictionaryContext/index.ts";
-import { defaultWordsForToeic600 } from "../contexts/DictionaryContext/defaultWordsForToeic600.ts";
+import { TOEIC600 } from "../contexts/DictionaryContext/TOEIC600.ts";
+import { Dictionary } from "../pages/Game/index.tsx";
 
 const LOCAL_STORAGE_DICTIONARIES_KEY = "dictionaries";
 export const KEY_NIGATE_LIST = "Weak";
@@ -22,8 +23,8 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
       return;
     }
     const defaultDictionaries = {
-      KEY_NIGATE_LIST: [],
-      "TOEIC 600": defaultWordsForToeic600,
+      [KEY_NIGATE_LIST]: [],
+      "TOEIC 600": TOEIC600,
     };
     setDictionaries(defaultDictionaries);
     localStorage.setItem(
@@ -41,7 +42,6 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
 
   const addWords = useCallback<DictionaryContextType["addWords"]>(
     (key, values) => {
-      console.log("addWords("+key+", "+values);
       setDictionaries((prev) => {
         const newDictionaries = {
           ...prev,
@@ -58,11 +58,11 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
   );
 
   const removeWord = useCallback<DictionaryContextType["removeWord"]>(
-    (key, value) => {
+    (key, dic) => {
       setDictionaries((prev) => {
         const newDictionaries = {
           ...prev,
-          [key]: (prev[key] ?? []).filter((x) => x !== value),
+          [key]: (prev[key] ?? []).filter((d) => d.title !== dic.title && d.part !== dic.part && d.definition !== dic.definition),
         };
 
         setLocalStorage(newDictionaries);
@@ -102,8 +102,8 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
     return dictionaries[key].length;
   }
 
-  const isWordInNigateList = (title:string) => {
-    return dictionaries[KEY_NIGATE_LIST].some((v)=>v==title) ? true : false;
+  const isWordInNigateList = (dic:Dictionary) => {
+    return dictionaries[KEY_NIGATE_LIST].some((d)=> d.title == dic.title && d.part == dic.part && d.definition == dic.definition) ? true : false;
   }
 
   return (

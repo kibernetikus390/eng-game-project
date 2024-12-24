@@ -3,8 +3,7 @@ import CircularProgressWithLabel from "../../components/CircularProgressWithLabe
 
 type GameLoadingProps = {
   loadingCounter: number;
-  numWords: number;
-  numExtraQuizSet: number;
+  numQuizAndExtra: number;
 };
 
 export default function GameLoading(props: GameLoadingProps) {
@@ -25,7 +24,7 @@ export default function GameLoading(props: GameLoadingProps) {
           sx={{ m: "1em" }}
           size={"4rem"}
           value={
-            (props.loadingCounter / (props.numWords + props.numExtraQuizSet)) *
+            (props.loadingCounter / props.numQuizAndExtra) *
             100
           }
         />

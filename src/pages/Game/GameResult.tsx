@@ -5,8 +5,6 @@ import {
   Button,
   Divider,
   Checkbox,
-} from "@mui/material";
-import {
   Paper,
   Table,
   TableContainer,
@@ -38,16 +36,16 @@ export default function GameResult(props: GameResultProps) {
     const newArr = Array(props.quizSet.length);
     for (let i = 0; i < props.quizSet.length; i++) {
       // TODO: 苦手リストにある場合trueにする
-      newArr[i] = isWordInNigateList(props.quizSet[i].title);
+      newArr[i] = isWordInNigateList(props.quizSet[i]);
     }
     return newArr;
   }
 
   function handleCheck(checked: boolean, index: number) {
     if (checked) {
-      removeWord(KEY_NIGATE_LIST, props.quizSet[index].title);
+      removeWord(KEY_NIGATE_LIST, props.quizSet[index]);
     } else {
-      addWords(KEY_NIGATE_LIST, [props.quizSet[index].title]);
+      addWords(KEY_NIGATE_LIST, [props.quizSet[index]]);
     }
   }
 

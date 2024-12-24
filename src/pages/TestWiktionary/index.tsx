@@ -131,7 +131,7 @@ function TestWiktionary() {
       console.log("searchin: " + partsToSearch[i]);
 
       definition = getDefinitionPart(doc, partsToSearch[i], title, getAllPart);
-      console.log(`${partsToSearch[i]}: ${definition}`);
+      console.log(`${definition}`);
 
       if (definition != "") {
         newQuiz.push({

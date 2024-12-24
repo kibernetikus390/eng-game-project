@@ -1,13 +1,14 @@
 import {createContext} from "react";
+import { Dictionary } from "../../pages/Game";
 
 export type DictionaryContextType = {
-  dictionaries: { [key: string]: string[] };
-  addWords: (key: string, words: string[]) => void;
-  removeWord: (key: string, word: string) => void;
-  addDictionary: (title: string, defaultWords?: string[]) => void;
+  dictionaries: { [key: string]: Dictionary[] };
+  addWords: (key: string, words: Dictionary[]) => void;
+  removeWord: (key: string, dic: Dictionary) => void;
+  addDictionary: (title: string, defaultWords?: Dictionary[]) => void;
   removeDictionary: (title: string) => void;
   getLength: (key: string) => number;
-  isWordInNigateList: (title: string) => boolean;
+  isWordInNigateList: (word: Dictionary) => boolean;
 };
 
 export const DictionaryContext = createContext<DictionaryContextType>({
