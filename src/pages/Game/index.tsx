@@ -65,6 +65,20 @@ function Game() {
   // 出題の最大数
   let maxQuiz = 50;
 
+  (function checkQuizSourceValue(){
+    let invalid = false;
+    Object.keys(dictionaries).map((v,i)=>{
+      if(invalid) return;
+      if(v==quizSource && getLength(v) == 0){
+        invalid = true;
+      }
+    });
+    if(invalid){
+      console.log("INVALID QUIZSOURCE");
+      setQuizSource("Random");
+    } 
+  })();
+
   if (quizSource != "Random") {
     const dictionary = dictionaries[quizSource];
     maxQuiz = Math.min(50, dictionary.length);
@@ -270,6 +284,7 @@ function Game() {
   // クリックイベント スタート画面に戻る
   function handleClickBack() {
     setIsResult(false);
+    //setAbort(true);
   }
 
   // クリックイベント 間違えた問題をリトライ
@@ -340,6 +355,8 @@ function Game() {
   if(abort){
     return;
   }
+
+  console.log(dictionaries);
   
   return (
     <Container sx={{ height: "100%" }}>

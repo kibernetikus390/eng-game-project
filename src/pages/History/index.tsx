@@ -55,7 +55,6 @@ export default function History() {
     const newChecked = [...checkedArr];
     for(let j = 0; j < newChecked.length; j++){
       if(history[i].title == history[j].title && history[i].part == history[j].part && history[i].def == history[j].def) {
-        console.log(j);
         newChecked[j] = !checked;
       }
     }
