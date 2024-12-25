@@ -62,7 +62,7 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
       setDictionaries((prev) => {
         const newDictionaries = {
           ...prev,
-          [key]: (prev[key] ?? []).filter((d) => d.title !== dic.title && d.part !== dic.part && d.definition !== dic.definition),
+          [key]: (prev[key] ?? []).filter((d) => d.title !== dic.title || d.part !== dic.part || d.definition !== dic.definition),
         };
 
         setLocalStorage(newDictionaries);

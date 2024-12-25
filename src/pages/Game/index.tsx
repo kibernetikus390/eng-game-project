@@ -1,18 +1,26 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useRef } from "react";
 import { ThemeContext } from "../../contexts/Theme/index.tsx";
 import { Container } from "@mui/material";
 import { DictionaryContext } from "../../contexts/DictionaryContext/index.ts";
 import { HistoryContext } from "../../contexts/HistoryContext/index.tsx";
-import handleClickOption from "./methods/handleClickOption.tsx";
+import handleClickOption from "./methods/handleClickOption.ts";
+import fetchWiktionary from "./methods/fetchWiktionary.ts";
+import getDefinition from "./methods/getDefinition.ts";
+import initTfTable from "./methods/initTfTable.ts";
+import addQuizCache from "./methods/addQuizCache.ts";
+import fetchOneRandomWord from "./methods/fetchRandomWord.ts";
+import fetchRandomWords from "./methods/fetchRandomWords.ts";
 import GameStart from "./GameStart.tsx";
 import GameResult from "./GameResult.tsx";
 import GameMain from "./GameMain.tsx";
 import GameLoading from "./GameLoading.tsx";
+import { AbortContext } from "../../contexts/AbortContext/index.ts";
+import { useNavigate } from "react-router-dom";
 
 // 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
-const VITE_ADD_LS_QUIZ: boolean = false;
+export const VITE_ADD_LS_QUIZ: boolean = false;
 // 出題に、ローカルストレージにキャッシュした問題を使う
-const VITE_USE_LS_QUIZ: boolean = false;
+export const VITE_USE_LS_QUIZ: boolean = false;
 
 export type Dictionary = {
   title: string;
@@ -22,8 +30,10 @@ export type Dictionary = {
 
 function Game() {
   const { dictionaries, getLength } = useContext(DictionaryContext);
+  const { abort, setAbort } = useContext(AbortContext);
   const { addHistory } = useContext(HistoryContext);
-
+  const navigate = useNavigate();
+  const abortControllerRef = useRef<AbortController | null>(null);
   // ステート：ロード中
   const [isLoading, setIsLoading] = useState<boolean>(false);
   // ローディング進度
@@ -66,8 +76,8 @@ function Game() {
 
   // TODO: 他のメソッドも外化する？
   // 選択肢のクリックイベント 正誤判定して進行する
-  const memHandleClickOption = (clickedOptionIndex: number) => {
-    handleClickOption(
+  function memHandleClickOption(clickedOptionIndex: number) {
+    return handleClickOption(
       clickedOptionIndex,
       correctOptionIndex,
       gameIndex,
@@ -79,10 +89,86 @@ function Game() {
       setIsPlaying,
       setIsResult,
     );
-  };
+  }
+
+  // 問題セットを生成
+  async function generateQuizSet(
+    num: number,
+    source: string,
+    setCounter: React.Dispatch<React.SetStateAction<number>>
+  ) {
+    try {
+      let fetchedWords: string[] = [];
+      const dictionary = dictionaries[source];
+
+      const newQuizSet: Dictionary[] = [];
+      // 出題：Random　ランダムな単語を生成
+      if (source === "Random") {
+        fetchedWords = await fetchRandomWords(num);
+      // 出題リスト　リストから問題セットを生成してreturn
+      } else {
+        const copyDic = [...dictionary];
+        for (let i = 0; i < num; i++) {
+          const newQuiz: Dictionary = copyDic.splice(
+            Math.floor(Math.random() * copyDic.length),
+            1,
+          )[0];
+          newQuizSet.push(newQuiz);
+          if (VITE_ADD_LS_QUIZ) {
+            addQuizCache(newQuiz);
+          }
+        }
+        return newQuizSet;
+      }
+      // 出題：Random wiktionaryから意味を取得する
+      for (let i = 0; i < fetchedWords.length; i++) { 
+        // 既存の非同期処理を中断
+        if(abortControllerRef.current == null || abortControllerRef.current.signal.aborted){
+          abortControllerRef.current = new AbortController();
+          throw new Error("fetch aborted");
+        }
+        let doc: Document;
+        try{
+          doc = await fetchWiktionary(fetchedWords[i], abortControllerRef.current.signal);
+          // console.log(doc);
+        } catch {
+          // ランダムに1つ取得しなおす
+          fetchedWords[i] = await memFetchOneRandomWord(fetchedWords);
+          i--;
+          continue;
+        }
+        // Wiktionaryのデータから意味の部分を取り出す
+        const newQuiz: Dictionary = getDefinition(doc, fetchedWords[i]);
+        if (newQuiz.definition == "") {
+          // 意味を取得できなかった
+          // ランダムに1つ取得しなおす
+          fetchedWords[i] = await memFetchOneRandomWord(fetchedWords);
+          i--;
+          continue;
+        }
+        // 取得成功
+        newQuizSet.push(newQuiz);
+        if (VITE_ADD_LS_QUIZ) {
+          addQuizCache(newQuiz);
+        }
+        // ローディング進捗表示用のカウンター
+        (setCounter as React.Dispatch<React.SetStateAction<number>>)(
+          (prev) => prev + 1,
+        );
+      }
+      return newQuizSet;
+    } catch (error) {
+      throw error;
+    }
+  }
 
   // スタートボタンのクリックイベント
-  async function handleClickStart(num: number, source: string) {
+  async function handleClickStart(
+    num: number,
+    source: string,
+  ) {
+    abortControllerRef.current = new AbortController();
+    setAbort(false);
     setIsLoading(true);
     setLoadingCounter(0);
     let newQuizSet: Dictionary[] | undefined = [];
@@ -130,246 +216,26 @@ function Game() {
         );
         setExtraSet(() => [...(newExtraSet as Dictionary[])]);
       } catch (error) {
-        alert(error);
+        console.log(error);
         reload();
       }
     }
-
+  
     setIsLoading(false);
     setIsPlaying(true);
     setGameIndex(0);
-    initTfTable((newQuizSet as Dictionary[]).length);
+    memInitTfTable((newQuizSet as Dictionary[]).length);
   }
+  
 
   // 正誤表を初期化
-  function initTfTable(num: number) {
-    const newTfTable: boolean[] = Array(num).fill(false);
-    setTfTable(newTfTable);
+  function memInitTfTable(num: number) {
+    return initTfTable(num, setTfTable);
   }
 
-  // 問題をローカルストレージに保存
-  function addQuizCache(newV: Dictionary) {
-    let quizCacheString = localStorage.getItem("quizCache");
-    if (quizCacheString == null) {
-      quizCacheString = "[]";
-    }
-    let quizCache: Dictionary[] = JSON.parse(quizCacheString);
-    quizCache = quizCache.flat();
-    if (!quizCache.some((v) => v.title == newV.title && v.part == newV.part)) {
-      quizCache.push(newV);
-      localStorage.setItem("quizCache", JSON.stringify(quizCache));
-      console.log("quizCahe pushed title:" + newV.title);
-    }
-  }
-
-  // 問題セットを生成
-  async function generateQuizSet(
-    num: number,
-    source: string,
-    setCounter: React.Dispatch<React.SetStateAction<number>>,
-  ) {
-    try {
-      let fetchedWords: string[] = [];
-      const dictionary = dictionaries[source];
-
-      const newQuizSet: Dictionary[] = [];
-      if (source === "Random") {
-        fetchedWords = await fetchRandomWords(num);
-      } else {
-        const copyDic = [...dictionary];
-        for (let i = 0; i < num; i++) {
-          const newQuiz: Dictionary = copyDic.splice(
-            Math.floor(Math.random() * copyDic.length),
-            1,
-          )[0];
-          newQuizSet.push(newQuiz);
-          if (VITE_ADD_LS_QUIZ) {
-            addQuizCache(newQuiz);
-          }
-        }
-        return newQuizSet;
-      }
-      for (let i = 0; i < fetchedWords.length; i++) {
-        const doc: Document = await fetchWiktionary(fetchedWords[i]);
-        const newQuiz: Dictionary = getDefinition(doc, fetchedWords[i]);
-        console.log(newQuiz);
-        if (newQuiz.definition == "") {
-          // definitionをフェッチできなかった 別の単語で再取得処理を入れる必要あり
-          console.log(`Failed to fetch definition. ${fetchedWords[i]}`);
-          if (source !== "Random") {
-            // 出題リストから1つ取得しなおす
-            if (dictionary.length < 1) {
-              throw new Error("Source of Question is too short");
-            }
-            fetchedWords[i] = dictionary.splice(
-              Math.floor(Math.random() * dictionary.length),
-              1,
-            )[0].title;
-          } else {
-            // ランダムに1つ取得しなおす
-            while (true) {
-              const newWord = (await fetchRandomWords(1))[0];
-              if (fetchedWords.some((v) => v == newWord)) {
-                continue;
-              }
-              fetchedWords[i] = newWord;
-              break;
-            }
-          }
-          i--;
-          continue;
-          // throw new Error(`Failed to fetch definition. ${fetchedWords[i]}`);
-        }
-        newQuizSet.push(newQuiz);
-        if (VITE_ADD_LS_QUIZ) {
-          addQuizCache(newQuiz);
-        }
-        // ローディング進捗表示用のカウンター
-        (setCounter as React.Dispatch<React.SetStateAction<number>>)(
-          (prev) => prev + 1,
-        );
-      }
-      return newQuizSet;
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  // RandoAPIからランダムな単語をフェッチ
-  async function fetchRandomWords(num: number) {
-    try {
-      const resRaw = await fetch(
-        "https://random-word-api.vercel.app/api?words=" + num,
-      );
-      const res: string[] = JSON.parse(await resRaw.text());
-      // console.log("Success: fetch from Rando : " + res);
-      return res;
-    } catch (error) {
-      alert("Failed to fetch from Rando: " + error);
-      throw error;
-    }
-  }
-
-  // WiktionaryAPIからHTML文書をフェッチ、余分な箇所を削除する
-  async function fetchWiktionary(title: string) {
-    try {
-      const resRaw = await fetch(
-        `https://en.wiktionary.org/w/api.php?action=query&format=json&origin=*&prop=extracts&titles=${title}&callback=&formatversion=2`,
-      );
-      const res = await resRaw.text();
-      const resJSON = await JSON.parse(res.slice(5, -1));
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(
-        resJSON.query.pages[0].extract,
-        "text/html",
-      );
-
-      // English以降のH2と以降の要素を削除する。（他言語の定義をヒットさせないため）
-      const docNative = doc;
-      let deleteNextH2Native: boolean = false;
-      let deletedH2Native: boolean = false;
-      let foundEnglishH2Native: boolean = false;
-      docNative.querySelectorAll("h2").forEach((e) => {
-        if (deletedH2Native) return;
-        if (deleteNextH2Native) {
-          let elmToDelete: Element | null = e;
-          while (elmToDelete) {
-            const nextElm: Element | null = elmToDelete.nextElementSibling;
-            elmToDelete.remove();
-            elmToDelete = nextElm;
-          }
-          deletedH2Native = true;
-          return;
-        }
-        if (e.dataset.mwAnchor == "English") {
-          deleteNextH2Native = true;
-          foundEnglishH2Native = true;
-        }
-      });
-
-      // この要素が存在しなければ、辞書に載っていない
-      if (!foundEnglishH2Native) {
-        throw new Error(`No english definition found. (title:${title})`);
-      }
-
-      // 説明文の中にdd,dl要素(類義語等)があると後々邪魔なので削除しておく
-      docNative.querySelectorAll("dd").forEach((e) => {
-        e.remove();
-      });
-      // リスト内にまたリストが登場することがある(用途の限定など)
-      docNative.querySelectorAll("li ol, li ul").forEach((e) => {
-        e.remove();
-      });
-
-      return docNative;
-    } catch (error) {
-      alert(`Failed to fetch from Wiktionary (title:${title}) : + ${error}`);
-      throw error;
-    }
-  }
-
-  // WiktionaryからフェッチしたHTMLから定義を取り出す
-  function getDefinition(
-    doc: Document,
-    title: string,
-    part: string = "Random",
-  ): Dictionary {
-    // 品詞の指定が無い場合ランダムに取得し、一番にヒットしたものを返す
-    let partsToSearch: string[] = [];
-    if (part == "Random") {
-      const partsList = [
-        "Adjective",
-        "Adverb",
-        "Determiner",
-        "Interjection",
-        "Noun",
-        "Numeral",
-        "Particle",
-        "Preposition",
-        "Pronoun",
-        "Verb",
-      ];
-      while (partsList.length > 0) {
-        partsToSearch.push(
-          partsList.splice(Math.floor(Math.random() * partsList.length), 1)[0],
-        );
-      }
-    } else {
-      partsToSearch = [part];
-    }
-
-    let definition: string = "";
-    let foundPart: string = "";
-    for (let i = 0; definition == "" && i < partsToSearch.length; i++) {
-      if (
-        doc.querySelectorAll(`[data-mw-anchor="${partsToSearch[i]}"]`).length ==
-        0
-      ) {
-        continue;
-      }
-      // テキスト部分を取得
-      doc
-        .querySelector(`[data-mw-anchor="${partsToSearch[i]}"]`)
-        ?.nextElementSibling?.nextElementSibling?.childNodes.forEach((v) => {
-          if (definition != "") {
-            return;
-          }
-          const txt = v.textContent?.split(/\[/)[0].trim();
-          if (txt == "" || txt == undefined) {
-            return;
-          }
-          definition = txt;
-        });
-
-      if (definition == "") {
-        console.log(
-          `${partsToSearch[i]}: definition found, but failed to clip certain information.`,
-        );
-        continue;
-      }
-      foundPart = partsToSearch[i];
-    }
-    return { title: title, part: foundPart, definition: definition };
+  // RandoAPIからランダムな単語を1つフェッチ
+  async function memFetchOneRandomWord(words: string[]) {
+    return fetchOneRandomWord(words, fetchRandomWords);
   }
 
   // ゲーム進行時イベント 選択肢を生成する
@@ -397,7 +263,7 @@ function Game() {
       setCorrectOptionIndex(ansIndex);
     }
     console.log(newOptions);
-    console.log("ans: " + ansIndex);
+    // console.log("ans: " + ansIndex);
     setOptions(newOptions);
   }, [gameIndex, quizSet, extraSet, isResult]);
 
@@ -420,7 +286,7 @@ function Game() {
     }
     //setNumWords(newQuiz.length);
     setQuizSet(newQuiz);
-    initTfTable(newQuiz.length);
+    memInitTfTable(newQuiz.length);
     setIsResult(false);
     setIsPlaying(true);
   }
@@ -440,9 +306,11 @@ function Game() {
     setNumWords(10);
   }
 
-  // リロード エラー時に使う
+  // リロード
   function reload() {
-    window.location.reload();
+    // window.location.reload();
+    navigate("/");
+    setAbort(true);
   }
 
   let correctNum: number = 0;
@@ -450,6 +318,29 @@ function Game() {
     if (v) correctNum++;
   });
 
+  const handleAbort = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort(); // 中断
+    }
+  };
+
+  // navBarでHomeをクリック->スタート画面に戻る
+  useEffect(()=>{
+    if (abort == true) {
+      handleAbort();
+      setIsLoading(false);
+      setIsPlaying(false);
+      setIsResult(false);
+      setGameIndex(-1);
+      setNumWords(10);
+      setAbort(false);
+    }
+  },[abort]);
+
+  if(abort){
+    return;
+  }
+  
   return (
     <Container sx={{ height: "100%" }}>
       {isLoading ? (

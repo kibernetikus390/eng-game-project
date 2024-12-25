@@ -7,7 +7,6 @@ type GameLoadingProps = {
 };
 
 export default function GameLoading(props: GameLoadingProps) {
-  console.log(props.numQuizAndExtra);
   return (
     <Container
       maxWidth="sm"

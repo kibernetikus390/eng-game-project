@@ -1,13 +1,15 @@
 import { useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { ThemeContext } from "../../contexts/Theme";
 import classes from "./index.module.css";
 
 import { AppBar, Box, Button, Divider, Stack, IconButton } from "@mui/material";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
+import { AbortContext } from "../../contexts/AbortContext";
 
 function NavBar(props: React.PropsWithChildren) {
+  const { abort, setAbort } = useContext(AbortContext);
   const { theme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
 
@@ -36,6 +38,7 @@ function NavBar(props: React.PropsWithChildren) {
             sx={{ color: "white", borderColor: "white" }}
             onClick={() => {
               navigate("/");
+              setAbort(true);
             }}
           >
             Home

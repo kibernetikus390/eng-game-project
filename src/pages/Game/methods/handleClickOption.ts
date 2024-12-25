@@ -15,7 +15,6 @@ export default function handleClickOption(
 ) {
     const correct = optionIndex == correctOptionIndex;
     if (correct) {
-      // console.log("correct");
       const newTfTable = tfTable;
       newTfTable[gameIndex] = true;
       setTfTable(newTfTable);

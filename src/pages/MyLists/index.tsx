@@ -30,6 +30,7 @@ function MyLists() {
     removeWord,
     addDictionary,
     removeDictionary,
+    getLength,
   } = useContext(DictionaryContext);
   // マイリストの名前の一覧
   const namesMyLists = Object.keys(dictionaries);
@@ -45,7 +46,7 @@ function MyLists() {
   const [checkedArr, setCheckedArr] = useState<boolean[]>(genChecked());
 
   function genChecked(){
-    if(selectList == KEY_CREATE_NEW_LIST){
+    if(selectList == KEY_CREATE_NEW_LIST || selectList == ""){
       return [];  
     }
     return Array(dictionaries[selectList].length).fill(false);
@@ -79,6 +80,17 @@ function MyLists() {
   function handleClickDeleteList(listName: string) {
     removeDictionary(listName);
     setSelectList(KEY_CREATE_NEW_LIST);
+  }
+  
+  function handleClickDeleteWords(listName: string, checked: boolean[]) {
+    const copyDic =  [...dictionaries[listName]];
+    for(let i = 0; i < checked.length; i++){
+      if(checked[i]){
+        removeWord(listName, copyDic[i]);
+      }
+      console.log(copyDic);
+    }
+    setCheckedArr(Array(getLength(listName)).fill(false));
   }
 
   function handleClickCheck(i:number, checked:boolean){
@@ -215,7 +227,7 @@ function MyLists() {
               sx={{ textTransform: "none", width: "16ch", fontSize: "small" }}
               variant="contained"
               onClick={() => {
-                handleClickDeleteList(selectList);
+                handleClickDeleteWords(selectList, checkedArr);
               }}
               disabled={!activeDeleteWordsButton}
             >

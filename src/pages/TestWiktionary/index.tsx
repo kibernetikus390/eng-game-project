@@ -37,7 +37,7 @@ function TestWiktionary() {
         }
         definition = txt;
       });
-    if (definition == "") {
+    if (definition == "" || definition.match(/^[(]\w*[)]$/) || definition.match(/^((simple)?(present)?(past)?) ((past)?(participle)?)/) || definition.match(/^((comparative)?(superlative)? form of)/)) {
       console.log(
         part + ": definition found, but failed to clip certain information.",
       );
@@ -82,6 +82,7 @@ function TestWiktionary() {
       }
     });
 
+    console.log(docNative);
     // この要素が存在しなければ、辞書に載っていない
     if (!foundEnglishH2Native) {
       throw new Error(`No english definition found. (title:${title})`);
@@ -91,10 +92,13 @@ function TestWiktionary() {
     docNative.querySelectorAll("dd").forEach((e) => {
       e.remove();
     });
+    
     // リスト内にまたリストが登場することがある(用途の限定など)
     docNative.querySelectorAll("li ol, li ul").forEach((e) => {
       e.remove();
     });
+
+    console.log(docNative);
 
     // 捜索する品詞
     let partsToSearch: string[] = [];

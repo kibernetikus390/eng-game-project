@@ -11,6 +11,7 @@ import { ThemeContextProvider } from "./providers/ThemeContextProvider.tsx";
 import { DictionaryContextProvider } from "./providers/DictionaryContextProvider.tsx";
 import { HistoryContextProvider } from "./providers/HistoryContextProvider.tsx";
 import History from "./pages/History/index.tsx";
+import { AbortContextProvider } from "./providers/AbortContextProvider.tsx";
 
 function ENGGameRoutes() {
   return (
@@ -43,12 +44,14 @@ function ENGGameRoutes() {
 function App() {
   return (
     <ThemeContextProvider>
+      <AbortContextProvider>
       <DictionaryContextProvider>
         <HistoryContextProvider>
           <CssBaseline />
           <ENGGameRoutes />
         </HistoryContextProvider>
       </DictionaryContextProvider>
+      </AbortContextProvider>
     </ThemeContextProvider>
   );
 }
