@@ -23,48 +23,51 @@ import { DictionaryContext } from "../../contexts/DictionaryContext";
 import { KEY_NIGATE_LIST } from "../../providers/DictionaryContextProvider";
 import { Dictionary } from "../Game";
 
-
 type DialogCreateNewListProps = {
   open: boolean;
   nameNewList: string;
   handleChangeNameNewList: (name: string) => void;
   handleSubmit: (name: string) => void;
-  handleClose: ()=>void;
+  handleClose: () => void;
 };
 
 type DialogAddNewWord = {
   open: boolean;
-  onClose: ()=>void;
-  addWord: (word:Dictionary)=>void;
+  onClose: () => void;
+  addWord: (word: Dictionary) => void;
 };
 
-function DialogAddNewWord(props: DialogAddNewWord){
+function DialogAddNewWord(props: DialogAddNewWord) {
   const [wordTitle, setWordTitle] = useState<string>("");
   const [wordPart, setWordPart] = useState<string>("");
   const [wordDef, setWordDef] = useState<string>("");
 
-  function handleChangeTitle (str:string) {
+  function handleChangeTitle(str: string) {
     setWordTitle(str);
   }
-  function handleChangePart (str:string) {
+  function handleChangePart(str: string) {
     setWordPart(str);
   }
-  function handleChangeDef (str:string) {
+  function handleChangeDef(str: string) {
     setWordDef(str);
   }
 
-  function submit(){
-    props.addWord({title:wordTitle, part:wordPart, definition:wordDef});
+  function submit() {
+    props.addWord({ title: wordTitle, part: wordPart, definition: wordDef });
     setWordTitle("");
     setWordPart("");
     setWordDef("");
   }
 
   return (
-    <Dialog onClose={props.onClose} open={props.open} >
-      <DialogTitle sx={{textAlign:"center"}}>Add new word</DialogTitle>
+    <Dialog
+      onClose={props.onClose}
+      open={props.open}
+      closeAfterTransition={false}
+    >
+      <DialogTitle sx={{ textAlign: "center" }}>Add new word</DialogTitle>
       <List>
-        <ListItem sx={{justifyContent:"center"}}>
+        <ListItem sx={{ justifyContent: "center" }}>
           <TextField
             required
             autoComplete="off"
@@ -74,18 +77,17 @@ function DialogAddNewWord(props: DialogAddNewWord){
             placeholder="flower"
             value={wordTitle}
             onChange={(e) => {
-              handleChangeTitle(e.target.value as string)
+              handleChangeTitle(e.target.value as string);
             }}
             onKeyDown={(e) => {
-              if(e.key === "Enter"){
+              if (e.key === "Enter") {
                 e.preventDefault();
-                console.log("add");
                 submit();
               }
             }}
           />
         </ListItem>
-        <ListItem sx={{justifyContent:"center"}}>
+        <ListItem sx={{ justifyContent: "center" }}>
           <TextField
             autoComplete="off"
             sx={{ m: 1, width: "20ch" }}
@@ -94,18 +96,17 @@ function DialogAddNewWord(props: DialogAddNewWord){
             placeholder="Noun"
             value={wordPart}
             onChange={(e) => {
-              handleChangePart(e.target.value as string)
+              handleChangePart(e.target.value as string);
             }}
             onKeyDown={(e) => {
-              if(e.key === "Enter"){
+              if (e.key === "Enter") {
                 e.preventDefault();
-                console.log("add");
                 submit();
               }
             }}
           />
         </ListItem>
-        <ListItem sx={{justifyContent:"center"}}>
+        <ListItem sx={{ justifyContent: "center" }}>
           <TextField
             required
             autoComplete="off"
@@ -114,22 +115,23 @@ function DialogAddNewWord(props: DialogAddNewWord){
             label="definition"
             value={wordDef}
             onChange={(e) => {
-              handleChangeDef(e.target.value as string)
+              handleChangeDef(e.target.value as string);
             }}
             onKeyDown={(e) => {
-              if(e.key === "Enter"){
+              if (e.key === "Enter") {
                 e.preventDefault();
-                console.log("add");
                 submit();
               }
             }}
           />
         </ListItem>
-        <ListItem sx={{justifyContent:"center"}}>
+        <ListItem sx={{ justifyContent: "center" }}>
           <Button
-            style={{ textTransform: "none", width:"90%" }}
+            style={{ textTransform: "none", width: "90%" }}
             variant="contained"
-            onClick={() => {submit()}}
+            onClick={() => {
+              submit();
+            }}
           >
             Add
           </Button>
@@ -140,17 +142,20 @@ function DialogAddNewWord(props: DialogAddNewWord){
 }
 
 function DialogCreateNewList(props: DialogCreateNewListProps) {
-  function submit(){
-    console.log("submit");
+  function submit() {
     props.handleSubmit(props.nameNewList);
     props.handleClose();
   }
 
   return (
-    <Dialog onClose={props.handleClose} open={props.open} >
-      <DialogTitle sx={{textAlign:"center"}}>Create New List</DialogTitle>
+    <Dialog
+      onClose={props.handleClose}
+      open={props.open}
+      closeAfterTransition={false}
+    >
+      <DialogTitle sx={{ textAlign: "center" }}>Create New List</DialogTitle>
       <List>
-        <ListItem sx={{justifyContent:"center"}}>
+        <ListItem sx={{ justifyContent: "center" }}>
           <TextField
             autoComplete="off"
             sx={{ m: 1, width: "20ch" }}
@@ -161,18 +166,20 @@ function DialogCreateNewList(props: DialogCreateNewListProps) {
               props.handleChangeNameNewList(e.target.value as string);
             }}
             onKeyDown={(e) => {
-              if(e.key === "Enter"){
+              if (e.key === "Enter") {
                 e.preventDefault();
                 submit();
               }
             }}
           />
         </ListItem>
-        <ListItem sx={{justifyContent:"center"}}>
+        <ListItem sx={{ justifyContent: "center" }}>
           <Button
-            style={{ textTransform: "none", width:"90%" }}
+            style={{ textTransform: "none", width: "90%" }}
             variant="contained"
-            onClick={() => {submit()}}
+            onClick={() => {
+              submit();
+            }}
             disabled={props.nameNewList.trim() === ""}
           >
             Add
@@ -199,7 +206,7 @@ export default function MyLists() {
     namesMyLists.length == 0 ? "" : namesMyLists[0],
   );
   const [checkedArr, setCheckedArr] = useState<boolean[]>(genChecked());
-  
+
   const [nameNewList, setNameNewList] = useState<string>("");
   const [openDialogNewList, setOpenDialogNewList] = useState<boolean>(false);
   const [openDialogAddWord, setOpenDialogAddWord] = useState<boolean>(false);
@@ -212,13 +219,10 @@ export default function MyLists() {
   }
 
   // 単語を追加する
-  function handleClickAddWord(dic: Dictionary, nameList: string = "FAFAF") {
+  function handleClickAddWord(dic: Dictionary) {
     // const words = str.split(/[" ,]+/).filter((e) => e !== "");
-    if(nameList === "FAFAF"){
-      nameList = selectList;
-    }
-    addDictionary(nameList, [dic]);
-    setSelectList(nameList);
+    addDictionary(selectList, [dic]);
+    setSelectList(selectList);
   }
 
   function handleSubmitCreateNewList(listName: string) {
@@ -238,7 +242,6 @@ export default function MyLists() {
       if (checked[i]) {
         removeWord(listName, copyDic[i]);
       }
-      console.log(copyDic);
     }
     setCheckedArr(Array(getLength(listName)).fill(false));
   }
@@ -252,34 +255,25 @@ export default function MyLists() {
   function handleChangeSelectList(name: string) {
     setSelectList(name);
     setCheckedArr(Array(dictionaries[name]?.length).fill(false));
-
   }
-  
+
   function handleChangeNameNewList(name: string) {
     setNameNewList(name);
   }
 
-  function handleCloseDialogCreateNewList(){
+  function handleCloseDialogCreateNewList() {
     setOpenDialogNewList(false);
   }
-  function handleCloseDialogAddNewWord(){
+  function handleCloseDialogAddNewWord() {
     setOpenDialogAddWord(false);
   }
 
   const displayTable =
-    selectList != "" &&
-    dictionaries[selectList]?.length != 0;
+    selectList != "" && dictionaries[selectList]?.length != 0;
 
   const activeDeleteWordsButton = checkedArr.some((v) => v);
 
-  const activeDeleteListButton = [
-    "",
-    KEY_NIGATE_LIST,
-  ].includes(selectList);
-
-  useEffect(() => {
-    console.log("openDialogNewList state:", openDialogNewList);
-  }, [openDialogNewList]);
+  const activeDeleteListButton = ["", KEY_NIGATE_LIST].includes(selectList);
 
   return (
     <Container
@@ -385,20 +379,22 @@ export default function MyLists() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {dictionaries[selectList].map((v, i) => (
-                  <TableRow key={i}>
-                    <TableCell key={i + "check"} align="center">
-                      <Checkbox
-                        key={i + "checkbox"}
-                        checked={checkedArr[i]}
-                        onClick={() => handleClickCheck(i, checkedArr[i])}
-                      />
-                    </TableCell>
-                    <TableCell key={i + "title"}>{v.title}</TableCell>
-                    <TableCell key={i + "part"}>{v.part}</TableCell>
-                    <TableCell key={i + "def"}>{v.definition}</TableCell>
-                  </TableRow>
-                ))}
+                {dictionaries[selectList].map((v, i) => {
+                  return (
+                    <TableRow key={i + "tr"}>
+                      <TableCell key={i + "check"} align="center">
+                        <Checkbox
+                          key={i + "checkbox"}
+                          checked={checkedArr[i]}
+                          onClick={() => handleClickCheck(i, checkedArr[i])}
+                        />
+                      </TableCell>
+                      <TableCell key={i + "title"}>{v.title}</TableCell>
+                      <TableCell key={i + "part"}>{v.part}</TableCell>
+                      <TableCell key={i + "def"}>{v.definition}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
