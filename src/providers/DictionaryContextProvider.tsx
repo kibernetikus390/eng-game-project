@@ -9,11 +9,18 @@ import { Dictionary } from "../pages/Game/index.tsx";
 const LOCAL_STORAGE_DICTIONARIES_KEY = "dictionaries";
 export const KEY_NIGATE_LIST = "Weak";
 
-export function DictionaryContextProvider({children, ...props}: React.PropsWithChildren) {
-  const [dictionaries, setDictionaries] = useState<DictionaryContextType["dictionaries"]>({});
+export function DictionaryContextProvider({
+  children,
+  ...props
+}: React.PropsWithChildren) {
+  const [dictionaries, setDictionaries] = useState<
+    DictionaryContextType["dictionaries"]
+  >({});
 
   useEffect(() => {
-    const localStorageDictionaries = localStorage.getItem(LOCAL_STORAGE_DICTIONARIES_KEY);
+    const localStorageDictionaries = localStorage.getItem(
+      LOCAL_STORAGE_DICTIONARIES_KEY,
+    );
     if (localStorageDictionaries) {
       setDictionaries(
         JSON.parse(
@@ -33,13 +40,11 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
     );
   }, []);
 
-  function setLocalStorage(val:DictionaryContextType["dictionaries"]){
-    localStorage.setItem(
-      LOCAL_STORAGE_DICTIONARIES_KEY,
-      JSON.stringify(val),
-    );
+  function setLocalStorage(val: DictionaryContextType["dictionaries"]) {
+    localStorage.setItem(LOCAL_STORAGE_DICTIONARIES_KEY, JSON.stringify(val));
   }
 
+  // addDicでも問題なく動いてる？
   const addWords = useCallback<DictionaryContextType["addWords"]>(
     (key, values) => {
       setDictionaries((prev) => {
@@ -62,7 +67,12 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
       setDictionaries((prev) => {
         const newDictionaries = {
           ...prev,
-          [key]: (prev[key] ?? []).filter((d) => d.title !== dic.title || d.part !== dic.part || d.definition !== dic.definition),
+          [key]: (prev[key] ?? []).filter(
+            (d) =>
+              d.title !== dic.title ||
+              d.part !== dic.part ||
+              d.definition !== dic.definition,
+          ),
         };
 
         setLocalStorage(newDictionaries);
@@ -73,11 +83,14 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
   );
 
   const addDictionary = useCallback<DictionaryContextType["addDictionary"]>(
-    (title, defaultWords = []) => {
+    (key, dics = []) => {
       setDictionaries((prev) => {
         const newDictionaries = {
           ...prev,
-          [title]: defaultWords,
+          // Dictionaryをstring化 -> Set<string>化して重複排除 -> string[]化 -> Dictionary[]化
+          [key]: Array.from(
+            new Set([...(prev[key]??[]), ...dics].map((d) => JSON.stringify(d))),
+          ).map((d) => JSON.parse(d)),
         };
 
         setLocalStorage(newDictionaries);
@@ -90,21 +103,28 @@ export function DictionaryContextProvider({children, ...props}: React.PropsWithC
   const removeDictionary = useCallback<
     DictionaryContextType["removeDictionary"]
   >((title) => {
-    setDictionaries((prev)=>{
-      const newDictionaries = {...prev};
+    setDictionaries((prev) => {
+      const newDictionaries = { ...prev };
       delete newDictionaries[title];
       setLocalStorage(newDictionaries);
       return newDictionaries;
     });
   }, []);
 
-  const getLength = (key:string) => {
+  const getLength = (key: string) => {
     return dictionaries[key].length;
-  }
+  };
 
-  const isWordInNigateList = (dic:Dictionary) => {
-    return dictionaries[KEY_NIGATE_LIST].some((d)=> d.title == dic.title && d.part == dic.part && d.definition == dic.definition) ? true : false;
-  }
+  const isWordInNigateList = (dic: Dictionary) => {
+    return dictionaries[KEY_NIGATE_LIST].some(
+      (d) =>
+        d.title == dic.title &&
+        d.part == dic.part &&
+        d.definition == dic.definition,
+    )
+      ? true
+      : false;
+  };
 
   return (
     <DictionaryContext.Provider

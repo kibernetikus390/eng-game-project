@@ -67,7 +67,7 @@ function Game() {
 
   (function checkQuizSourceValue(){
     let invalid = false;
-    Object.keys(dictionaries).map((v,i)=>{
+    Object.keys(dictionaries).map((v,_)=>{
       if(invalid) return;
       if(v==quizSource && getLength(v) == 0){
         invalid = true;
@@ -356,8 +356,6 @@ function Game() {
     return;
   }
 
-  console.log(dictionaries);
-  
   return (
     <Container sx={{ height: "100%" }}>
       {isLoading ? (
