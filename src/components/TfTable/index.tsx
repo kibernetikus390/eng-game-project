@@ -16,13 +16,13 @@ const IconDash = () => {
   return <RemoveIcon fontSize="small" sx={{ display: "inline" }} />;
 };
 
-function TfTable(props: { arr: boolean[]; gameIndex: number }) {
+function TfTable(props: { arr: boolean[]; gameIndex: number; isJudge: boolean }) {
   return (
     <Container>
       {props.arr.map((v, i) => {
         return v === true ? (
           <IconCircle key={i} />
-        ) : props.gameIndex <= i ? (
+        ) : props.gameIndex <= (props.isJudge ? i-1 : i) ? (
           <IconDash key={i} />
         ) : (
           <IconCross key={i} />

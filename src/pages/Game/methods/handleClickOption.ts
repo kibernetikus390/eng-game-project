@@ -6,27 +6,34 @@ export default function handleClickOption(
     correctOptionIndex: number,
     gameIndex: number,
     tfTable: boolean[],
-    setTfTable: React.Dispatch<boolean[]>,
+    setTfTable: React.Dispatch<React.SetStateAction<boolean[]>>,
     quizSet: Dictionary[],
     addHistory: HistoryContextType["addHistory"],
-    setGameIndex: React.Dispatch<number>,
-    setIsPlaying: React.Dispatch<boolean>,
-    setIsResult: React.Dispatch<boolean>,
+    setGameIndex: React.Dispatch<React.SetStateAction<number>>,
+    setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>,
+    setIsResult: React.Dispatch<React.SetStateAction<boolean>>,
+    isJudge: boolean,
+    setIsJudge: React.Dispatch<React.SetStateAction<boolean>>,
 ) {
-    const correct = optionIndex == correctOptionIndex;
-    if (correct) {
-      const newTfTable = tfTable;
-      newTfTable[gameIndex] = true;
-      setTfTable(newTfTable);
+    if(isJudge){
+      setIsJudge(false);
+      setGameIndex(gameIndex+1);
+      if (gameIndex < quizSet.length - 1) {
+        return;
+      }
+      // リザルト画面へ
+      setIsPlaying(false);
+      setIsResult(true);
     } else {
-      // console.log("wrong");
+      setIsJudge(true);
+      const correct = optionIndex == correctOptionIndex;
+      if (correct) {
+        const newTfTable = tfTable;
+        newTfTable[gameIndex] = true;
+        setTfTable(newTfTable);
+      } else {
+        // console.log("wrong");
+      }
+      addHistory(quizSet[gameIndex].title, quizSet[gameIndex].part, quizSet[gameIndex].definition, correct);
     }
-    addHistory(quizSet[gameIndex].title, quizSet[gameIndex].part, quizSet[gameIndex].definition, correct);
-    setGameIndex(gameIndex+1);
-    if (gameIndex < quizSet.length - 1) {
-      return;
-    }
-    // リザルト画面へ
-    setIsPlaying(false);
-    setIsResult(true);
 };

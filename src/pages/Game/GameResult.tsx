@@ -32,10 +32,12 @@ export default function GameResult(props: GameResultProps) {
   const { isWordInNigateList, addWords, removeWord } =
     useContext(DictionaryContext);
   const checkedArr = genCheckedArr();
+  
   function genCheckedArr() {
     const newArr = Array(props.quizSet.length);
     for (let i = 0; i < props.quizSet.length; i++) {
       // TODO: 苦手リストにある場合trueにする
+      //newArr[i] = !props.tfTable[i] || isWordInNigateList(props.quizSet[i]);
       newArr[i] = isWordInNigateList(props.quizSet[i]);
     }
     return newArr;

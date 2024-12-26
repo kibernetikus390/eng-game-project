@@ -53,6 +53,9 @@ function DialogAddNewWord(props: DialogAddNewWord) {
   }
 
   function submit() {
+    if (wordTitle.trim() === "" || wordDef.trim() === "") {
+      return;
+    }
     props.addWord({ title: wordTitle, part: wordPart, definition: wordDef });
     setWordTitle("");
     setWordPart("");
@@ -372,7 +375,16 @@ export default function MyLists() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell align="center"></TableCell>
+                  <TableCell align="center">
+                    <Checkbox
+                      checked={!checkedArr.some((e) => !e)}
+                      onClick={() => {
+                        if (!checkedArr.some((e) => !e))
+                          setCheckedArr(Array(checkedArr.length).fill(false));
+                        else setCheckedArr(Array(checkedArr.length).fill(true));
+                      }}
+                    />
+                  </TableCell>
                   <TableCell>Title</TableCell>
                   <TableCell>Part</TableCell>
                   <TableCell>Definition</TableCell>

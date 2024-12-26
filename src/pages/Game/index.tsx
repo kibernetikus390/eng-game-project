@@ -42,6 +42,8 @@ function Game() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   // ステート：リザルト画面
   const [isResult, setIsResult] = useState<boolean>(false);
+  // ステート：正誤表示中
+  const [isJudge, setIsJudge] = useState<boolean>(false);
   // ゲーム進度
   const [gameIndex, setGameIndex] = useState<number>(-1);
   // 出題数
@@ -102,6 +104,8 @@ function Game() {
       setGameIndex,
       setIsPlaying,
       setIsResult,
+      isJudge,
+      setIsJudge,
     );
   }
 
@@ -183,6 +187,7 @@ function Game() {
   ) {
     abortControllerRef.current = new AbortController();
     setAbort(false);
+    setIsJudge(false);
     setIsLoading(true);
     setLoadingCounter(0);
     let newQuizSet: Dictionary[] | undefined = [];
@@ -371,6 +376,8 @@ function Game() {
           options={options}
           memHandleClickOption={memHandleClickOption}
           theme={theme}
+          isJudge={isJudge}
+          correctIndex={correctOptionIndex}
         />
       ) : isResult ? (
         <GameResult
