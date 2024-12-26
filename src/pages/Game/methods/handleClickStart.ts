@@ -75,6 +75,9 @@ export default  async function handleClickStart(
         // 出題リスト
         newQuizSet = await generateQuizSet(num, source, setLoadingCounter,dictionaries,fetchRandomWords,addQuizCache,abortControllerRef,fetchWiktionary,fetchOneRandomWord,getDefinition);
         setQuizSet(() => [...(newQuizSet as Dictionary[])]);
+        if(source !== "Random"){
+          setLoadingCounter(num);
+        }
         // 選択肢用の追加リスト
         newExtraSet = await generateQuizSet(
           numExtraQuizSet,

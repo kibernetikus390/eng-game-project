@@ -28,8 +28,8 @@ export default async function generateQuizSet(
     // 出題：Random　ランダムな単語を生成
     if (source === "Random") {
       fetchedWords = await fetchRandomWords(num);
-      // 出題リスト　リストから問題セットを生成してreturn
     } else {
+      // 出題リストから問題セットを生成してreturn
       const copyDic = [...dictionary];
       for (let i = 0; i < num; i++) {
         const newQuiz: Dictionary = copyDic.splice(

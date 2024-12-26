@@ -94,6 +94,7 @@ export function DictionaryContextProvider({
         };
 
         setLocalStorage(newDictionaries);
+        console.log(JSON.stringify(newDictionaries[key]));
         return newDictionaries;
       });
     },
