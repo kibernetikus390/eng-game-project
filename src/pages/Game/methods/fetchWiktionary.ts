@@ -1,5 +1,5 @@
 // WiktionaryAPIからHTML文書をフェッチ、余分な箇所を削除する
-export default async function fetchWiktionary(title: string, signal:AbortSignal) {
+export default async function fetchWiktionary(title: string, signal:AbortSignal): Promise<Document> {
   try {
     const resRaw = await fetch(
       `https://en.wiktionary.org/w/api.php?action=query&format=json&origin=*&prop=extracts&titles=${title}&callback=&formatversion=2`,

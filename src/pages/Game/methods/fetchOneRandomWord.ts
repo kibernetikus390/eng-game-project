@@ -1,6 +1,6 @@
 // RandoAPIからランダムな単語を1つフェッチ
 export default async function fetchOneRandomWord(
-  words: string[],
+  words: string[]=[], // これに含まれない単語をフェッチする
   fetchRandomWords: (n: number) => Promise<string[]>,
 ) {
   try {

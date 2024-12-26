@@ -1,5 +1,18 @@
 import { Dictionary } from "..";
 
+export const partsList = [
+  "Adjective",
+  "Adverb",
+  "Determiner",
+  "Interjection",
+  "Noun",
+  "Numeral",
+  "Particle",
+  "Preposition",
+  "Pronoun",
+  "Verb",
+];
+
 // WiktionaryからフェッチしたHTMLから定義を取り出す
 export default function getDefinition(
   doc: Document,
@@ -9,18 +22,7 @@ export default function getDefinition(
   // 品詞の指定が無い場合ランダムに取得し、一番にヒットしたものを返す
   let partsToSearch: string[] = [];
   if (part == "Random") {
-    const partsList = [
-      "Adjective",
-      "Adverb",
-      "Determiner",
-      "Interjection",
-      "Noun",
-      "Numeral",
-      "Particle",
-      "Preposition",
-      "Pronoun",
-      "Verb",
-    ];
+    
     while (partsList.length > 0) {
       partsToSearch.push(
         partsList.splice(Math.floor(Math.random() * partsList.length), 1)[0],

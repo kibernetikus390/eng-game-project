@@ -1,8 +1,12 @@
 import {createContext} from "react";
 import { Dictionary } from "../../pages/Game";
 
+export type DictionariesType = {
+  [key: string]: Dictionary[];
+};
+
 export type DictionaryContextType = {
-  dictionaries: { [key: string]: Dictionary[] };
+  dictionaries: DictionariesType;
   addWords: (key: string, words: Dictionary[]) => void;
   removeWord: (key: string, dic: Dictionary) => void;
   addDictionary: (title: string, defaultWords?: Dictionary[]) => void;

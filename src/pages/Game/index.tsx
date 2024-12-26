@@ -8,8 +8,10 @@ import fetchWiktionary from "./methods/fetchWiktionary.ts";
 import getDefinition from "./methods/getDefinition.ts";
 import initTfTable from "./methods/initTfTable.ts";
 import addQuizCache from "./methods/addQuizCache.ts";
-import fetchOneRandomWord from "./methods/fetchRandomWord.ts";
+import fetchOneRandomWord from "./methods/fetchOneRandomWord.ts";
 import fetchRandomWords from "./methods/fetchRandomWords.ts";
+import generateQuizSet from "./methods/generateQuizSet.ts";
+import handleClickStart from "./methods/handleClickStart.ts";
 import GameStart from "./GameStart.tsx";
 import GameResult from "./GameResult.tsx";
 import GameMain from "./GameMain.tsx";
@@ -67,6 +69,7 @@ function Game() {
   // 出題の最大数
   let maxQuiz = 50;
 
+  // 出題元の選択が有効かチェック
   (function checkQuizSourceValue(){
     let invalid = false;
     Object.keys(dictionaries).map((v,_)=>{
@@ -81,6 +84,7 @@ function Game() {
     } 
   })();
 
+  // 出題数が有効かチェック
   if (quizSource != "Random") {
     const dictionary = dictionaries[quizSource];
     maxQuiz = Math.min(50, dictionary.length);
@@ -108,153 +112,10 @@ function Game() {
       setIsJudge,
     );
   }
-
-  // 問題セットを生成
-  async function generateQuizSet(
-    num: number,
-    source: string,
-    setCounter: React.Dispatch<React.SetStateAction<number>>
-  ) {
-    try {
-      let fetchedWords: string[] = [];
-      const dictionary = dictionaries[source];
-
-      const newQuizSet: Dictionary[] = [];
-      // 出題：Random　ランダムな単語を生成
-      if (source === "Random") {
-        fetchedWords = await fetchRandomWords(num);
-      // 出題リスト　リストから問題セットを生成してreturn
-      } else {
-        const copyDic = [...dictionary];
-        for (let i = 0; i < num; i++) {
-          const newQuiz: Dictionary = copyDic.splice(
-            Math.floor(Math.random() * copyDic.length),
-            1,
-          )[0];
-          newQuizSet.push(newQuiz);
-          if (VITE_ADD_LS_QUIZ) {
-            addQuizCache(newQuiz);
-          }
-        }
-        return newQuizSet;
-      }
-      // 出題：Random wiktionaryから意味を取得する
-      for (let i = 0; i < fetchedWords.length; i++) { 
-        // 既存の非同期処理を中断
-        if(abortControllerRef.current == null || abortControllerRef.current.signal.aborted){
-          abortControllerRef.current = new AbortController();
-          throw new Error("fetch aborted");
-        }
-        let doc: Document;
-        try{
-          doc = await fetchWiktionary(fetchedWords[i], abortControllerRef.current.signal);
-          // console.log(doc);
-        } catch {
-          // ランダムに1つ取得しなおす
-          fetchedWords[i] = await memFetchOneRandomWord(fetchedWords);
-          i--;
-          continue;
-        }
-        // Wiktionaryのデータから意味の部分を取り出す
-        const newQuiz: Dictionary = getDefinition(doc, fetchedWords[i]);
-        if (newQuiz.definition == "") {
-          // 意味を取得できなかった
-          // ランダムに1つ取得しなおす
-          fetchedWords[i] = await memFetchOneRandomWord(fetchedWords);
-          i--;
-          continue;
-        }
-        // 取得成功
-        newQuizSet.push(newQuiz);
-        if (VITE_ADD_LS_QUIZ) {
-          addQuizCache(newQuiz);
-        }
-        // ローディング進捗表示用のカウンター
-        (setCounter as React.Dispatch<React.SetStateAction<number>>)(
-          (prev) => prev + 1,
-        );
-      }
-      return newQuizSet;
-    } catch (error) {
-      throw error;
-    }
-  }
-
+  
   // スタートボタンのクリックイベント
-  async function handleClickStart(
-    num: number,
-    source: string,
-  ) {
-    abortControllerRef.current = new AbortController();
-    setAbort(false);
-    setIsJudge(false);
-    setIsLoading(true);
-    setLoadingCounter(0);
-    let newQuizSet: Dictionary[] | undefined = [];
-    let newExtraSet: Dictionary[] | undefined = [];
-    if (VITE_USE_LS_QUIZ) {
-      // クイズをローカルストレージから生成する
-      // フェッチに時間がかかるので今のところテスト用
-      const cacheString = localStorage.getItem("quizCache");
-      // 異常：ローカルストレージが空
-      if (cacheString == null) {
-        alert(`localStorage(quizCache) is null`);
-        reload();
-        return;
-      }
-      const cache = JSON.parse(cacheString).flat();
-      // 異常：キャッシュされた問題数が足りない
-      if (cache.length < num + numExtraQuizSet) {
-        alert(`localStorage(quizCache) is null`);
-        reload();
-        return;
-      }
-      for (let i = 0; i < num; i++) {
-        newQuizSet.push(
-          cache.splice(Math.floor(Math.random() * cache.length), 1)[0],
-        );
-      }
-      setQuizSet(() => [...(newQuizSet as Dictionary[])]);
-      for (let i = 0; i < numExtraQuizSet; i++) {
-        newExtraSet.push(
-          cache.splice(Math.floor(Math.random() * cache.length), 1)[0],
-        );
-      }
-      setExtraSet(() => [...(newExtraSet as Dictionary[])]);
-    } else {
-      // クイズをWebAPIから生成
-      try {
-        // 出題リスト
-        newQuizSet = await generateQuizSet(num, source, setLoadingCounter);
-        setQuizSet(() => [...(newQuizSet as Dictionary[])]);
-        // 選択肢用の追加リスト
-        newExtraSet = await generateQuizSet(
-          numExtraQuizSet,
-          "Random",
-          setLoadingCounter,
-        );
-        setExtraSet(() => [...(newExtraSet as Dictionary[])]);
-      } catch (error) {
-        console.log(error);
-        reload();
-      }
-    }
-  
-    setIsLoading(false);
-    setIsPlaying(true);
-    setGameIndex(0);
-    memInitTfTable((newQuizSet as Dictionary[]).length);
-  }
-  
-
-  // 正誤表を初期化
-  function memInitTfTable(num: number) {
-    return initTfTable(num, setTfTable);
-  }
-
-  // RandoAPIからランダムな単語を1つフェッチ
-  async function memFetchOneRandomWord(words: string[]) {
-    return fetchOneRandomWord(words, fetchRandomWords);
+  async function memHandleClickStart(num:number, source:string){
+    return handleClickStart(num,source,abortControllerRef,numExtraQuizSet,generateQuizSet,dictionaries,fetchRandomWords,addQuizCache,fetchWiktionary,fetchOneRandomWord,getDefinition,reload,setAbort,setIsJudge,setIsLoading,setLoadingCounter,setQuizSet,setExtraSet,setIsPlaying,setGameIndex,setTfTable,initTfTable);
   }
 
   // ゲーム進行時イベント 選択肢を生成する
@@ -306,7 +167,7 @@ function Game() {
     }
     //setNumWords(newQuiz.length);
     setQuizSet(newQuiz);
-    memInitTfTable(newQuiz.length);
+    initTfTable(newQuiz.length, setTfTable);
     setIsResult(false);
     setIsPlaying(true);
   }
@@ -396,7 +257,7 @@ function Game() {
           getLength={getLength}
           numWords={numWords}
           handleNumChange={handleNumChange}
-          handleClickStart={handleClickStart}
+          handleClickStart={memHandleClickStart}
         />
       )}
     </Container>

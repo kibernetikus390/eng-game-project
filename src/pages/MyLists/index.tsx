@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import {
   Button,
   Stack,
@@ -22,6 +22,9 @@ import {
 import { DictionaryContext } from "../../contexts/DictionaryContext";
 import { KEY_NIGATE_LIST } from "../../providers/DictionaryContextProvider";
 import { Dictionary } from "../Game";
+import fetchWiktionary from "../Game/methods/fetchWiktionary";
+import getDefinition from "../Game/methods/getDefinition";
+import { partsList } from "../Game/methods/getDefinition";
 
 type DialogCreateNewListProps = {
   open: boolean;
@@ -35,31 +38,112 @@ type DialogAddNewWord = {
   open: boolean;
   onClose: () => void;
   addWord: (word: Dictionary) => void;
+  setOpenDialogFetch: React.Dispatch<React.SetStateAction<boolean>>;
+  addWordTitle: string;
+  setAddWordTitle: React.Dispatch<React.SetStateAction<string>>;
+  addWordPart: string;
+  setAddWordPart: React.Dispatch<React.SetStateAction<string>>;
+  addWordDef: string;
+  setAddWordDef: React.Dispatch<React.SetStateAction<string>>;
 };
 
-function DialogAddNewWord(props: DialogAddNewWord) {
-  const [wordTitle, setWordTitle] = useState<string>("");
-  const [wordPart, setWordPart] = useState<string>("");
-  const [wordDef, setWordDef] = useState<string>("");
+type DialogFetchProps = {
+  open: boolean;
+  onClose: () => void;
+  wordTitle: string;
+  wordPart: string;
+};
 
+function DialogFetchFromWiktionary(props: DialogFetchProps) {
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const [dicList, setDicList] = useState<Dictionary[]>([]);
+
+  async function fetch() {
+    abortControllerRef.current = new AbortController();
+    try {
+      const doc: Document = await fetchWiktionary(
+        props.wordTitle,
+        abortControllerRef.current.signal,
+      );
+      for (let part of partsList) {
+        const dict: Dictionary = getDefinition(doc, props.wordTitle, part);
+        if (dict.definition.trim() != "") {
+          console.log(dict);
+          dicList.push(dict);
+          setDicList((prev) => [...prev, dict]);
+        }
+      }
+    } catch {
+      console.log("fetch failed: DialogFetchFromWiktionary");
+    }
+  }
+
+  useEffect(() => {
+    if (props.open) {
+      setDicList([]);
+      fetch();
+    }
+  }, [props.open]);
+
+  return (
+    <Dialog onClose={props.onClose} open={props.open}>
+      <DialogTitle sx={{ textAlign: "center" }}>【 {props.wordTitle} 】</DialogTitle>
+      <List>
+        {dicList.map((v, i) => {
+          return (
+            <ListItem key={i + "listitem"} sx={{ justifyContent: "center" }}>
+              <Button
+                style={{ textTransform: "none" }}
+                variant="outlined"
+                onClick={() => {}}
+              >
+                {v.part}: {v.definition}
+              </Button>
+            </ListItem>
+          );
+        })}
+          <ListItem sx={{ justifyContent: "center" }}>
+          {dicList.length != 0 ? (
+            <Button
+              style={{ textTransform: "none" }}
+              variant="contained"
+              onClick={() => {}}
+            >
+              Add all
+            </Button>
+        ) : "fetching..."}
+          </ListItem>
+      </List>
+    </Dialog>
+  );
+}
+
+function DialogAddNewWord(props: DialogAddNewWord) {
   function handleChangeTitle(str: string) {
-    setWordTitle(str);
+    props.setAddWordTitle(str);
   }
   function handleChangePart(str: string) {
-    setWordPart(str);
+    props.setAddWordPart(str);
   }
   function handleChangeDef(str: string) {
-    setWordDef(str);
+    props.setAddWordDef(str);
   }
 
+  const activeAddButton =
+    props.addWordTitle.trim() !== "" && props.addWordDef.trim() !== "";
+
   function submit() {
-    if (wordTitle.trim() === "" || wordDef.trim() === "") {
+    if (!activeAddButton) {
       return;
     }
-    props.addWord({ title: wordTitle, part: wordPart, definition: wordDef });
-    setWordTitle("");
-    setWordPart("");
-    setWordDef("");
+    props.addWord({
+      title: props.addWordTitle,
+      part: props.addWordPart,
+      definition: props.addWordDef,
+    });
+    props.setAddWordTitle("");
+    props.setAddWordPart("");
+    props.setAddWordDef("");
   }
 
   return (
@@ -78,7 +162,7 @@ function DialogAddNewWord(props: DialogAddNewWord) {
             id="name-new-list"
             label="word"
             placeholder="flower"
-            value={wordTitle}
+            value={props.addWordTitle}
             onChange={(e) => {
               handleChangeTitle(e.target.value as string);
             }}
@@ -97,7 +181,7 @@ function DialogAddNewWord(props: DialogAddNewWord) {
             id="name-new-list"
             label="part"
             placeholder="Noun"
-            value={wordPart}
+            value={props.addWordPart}
             onChange={(e) => {
               handleChangePart(e.target.value as string);
             }}
@@ -116,7 +200,7 @@ function DialogAddNewWord(props: DialogAddNewWord) {
             sx={{ m: 1, width: "20ch" }}
             id="name-new-list"
             label="definition"
-            value={wordDef}
+            value={props.addWordDef}
             onChange={(e) => {
               handleChangeDef(e.target.value as string);
             }}
@@ -130,6 +214,7 @@ function DialogAddNewWord(props: DialogAddNewWord) {
         </ListItem>
         <ListItem sx={{ justifyContent: "center" }}>
           <Button
+            disabled={!activeAddButton}
             style={{ textTransform: "none", width: "90%" }}
             variant="contained"
             onClick={() => {
@@ -137,6 +222,18 @@ function DialogAddNewWord(props: DialogAddNewWord) {
             }}
           >
             Add
+          </Button>
+        </ListItem>
+        <ListItem sx={{ justifyContent: "center" }}>
+          <Button
+            disabled={!(props.addWordTitle.trim() !== "")}
+            style={{ textTransform: "none", width: "90%" }}
+            variant="contained"
+            onClick={() => {
+              props.setOpenDialogFetch(true);
+            }}
+          >
+            Fetch
           </Button>
         </ListItem>
       </List>
@@ -196,7 +293,7 @@ function DialogCreateNewList(props: DialogCreateNewListProps) {
 export default function MyLists() {
   const {
     dictionaries,
-    addWords,
+    // addWords,
     removeWord,
     addDictionary,
     removeDictionary,
@@ -213,6 +310,11 @@ export default function MyLists() {
   const [nameNewList, setNameNewList] = useState<string>("");
   const [openDialogNewList, setOpenDialogNewList] = useState<boolean>(false);
   const [openDialogAddWord, setOpenDialogAddWord] = useState<boolean>(false);
+  const [openDialogFetch, setOpenDialogFetch] = useState<boolean>(false);
+
+  const [addWordTitle, setAddWordTitle] = useState<string>("");
+  const [addWordPart, setAddWordPart] = useState<string>("");
+  const [addWordDef, setAddWordDef] = useState<string>("");
 
   function genChecked() {
     if (selectList == "") {
@@ -270,6 +372,9 @@ export default function MyLists() {
   function handleCloseDialogAddNewWord() {
     setOpenDialogAddWord(false);
   }
+  function handleCloseDialogFetch() {
+    setOpenDialogFetch(false);
+  }
 
   const displayTable =
     selectList != "" && dictionaries[selectList]?.length != 0;
@@ -293,6 +398,13 @@ export default function MyLists() {
         open={openDialogAddWord}
         onClose={handleCloseDialogAddNewWord}
         addWord={handleClickAddWord}
+        setOpenDialogFetch={setOpenDialogFetch}
+        addWordTitle={addWordTitle}
+        setAddWordTitle={setAddWordTitle}
+        addWordPart={addWordPart}
+        setAddWordPart={setAddWordPart}
+        addWordDef={addWordDef}
+        setAddWordDef={setAddWordDef}
       />
       <DialogCreateNewList
         open={openDialogNewList}
@@ -300,6 +412,12 @@ export default function MyLists() {
         handleChangeNameNewList={handleChangeNameNewList}
         handleSubmit={handleSubmitCreateNewList}
         handleClose={handleCloseDialogCreateNewList}
+      />
+      <DialogFetchFromWiktionary
+        open={openDialogFetch}
+        onClose={handleCloseDialogFetch}
+        wordTitle={addWordTitle}
+        wordPart={addWordPart}
       />
       <Stack
         spacing={2}
