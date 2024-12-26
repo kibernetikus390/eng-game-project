@@ -24,7 +24,7 @@ export default function handleClickOption(
       // リザルト画面へ
       setIsPlaying(false);
       setIsResult(true);
-    } else {
+    } else if (optionIndex !== -1) {
       setIsJudge(true);
       const correct = optionIndex == correctOptionIndex;
       if (correct) {

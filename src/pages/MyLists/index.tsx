@@ -52,6 +52,8 @@ type DialogFetchProps = {
   onClose: () => void;
   wordTitle: string;
   wordPart: string;
+  handleClickFetchedOption: (dic: Dictionary) => void;
+  handleClickAllFetched: (dics: Dictionary[]) => void;
 };
 
 function DialogFetchFromWiktionary(props: DialogFetchProps) {
@@ -61,21 +63,45 @@ function DialogFetchFromWiktionary(props: DialogFetchProps) {
   async function fetch() {
     abortControllerRef.current = new AbortController();
     try {
+      const part = partsList.includes(props.wordPart) ? props.wordPart : "All";
       const doc: Document = await fetchWiktionary(
         props.wordTitle,
         abortControllerRef.current.signal,
       );
-      for (let part of partsList) {
-        const dict: Dictionary = getDefinition(doc, props.wordTitle, part);
+      if (partsList.includes(props.wordPart)) {
+        // 指定の品詞を取得
+        const dict: Dictionary = getDefinition(
+          doc,
+          props.wordTitle,
+          props.wordPart,
+        );
         if (dict.definition.trim() != "") {
           console.log(dict);
           dicList.push(dict);
           setDicList((prev) => [...prev, dict]);
         }
+      } else {
+        // 全ての品詞を取得
+        for (let part of partsList) {
+          const dict: Dictionary = getDefinition(doc, props.wordTitle, part);
+          if (dict.definition.trim() != "") {
+            console.log(dict);
+            dicList.push(dict);
+            setDicList((prev) => [...prev, dict]);
+          }
+        }
       }
     } catch {
       console.log("fetch failed: DialogFetchFromWiktionary");
     }
+  }
+
+  function handleClickOption(index: number) {
+    props.handleClickFetchedOption(dicList[index]);
+  }
+
+  function handleClickAddAll() {
+    props.handleClickAllFetched(dicList);
   }
 
   useEffect(() => {
@@ -87,7 +113,9 @@ function DialogFetchFromWiktionary(props: DialogFetchProps) {
 
   return (
     <Dialog onClose={props.onClose} open={props.open}>
-      <DialogTitle sx={{ textAlign: "center" }}>【 {props.wordTitle} 】</DialogTitle>
+      <DialogTitle sx={{ textAlign: "center" }}>
+        【 {props.wordTitle} 】
+      </DialogTitle>
       <List>
         {dicList.map((v, i) => {
           return (
@@ -95,24 +123,28 @@ function DialogFetchFromWiktionary(props: DialogFetchProps) {
               <Button
                 style={{ textTransform: "none" }}
                 variant="outlined"
-                onClick={() => {}}
+                onClick={() => {
+                  handleClickOption(i);
+                }}
               >
                 {v.part}: {v.definition}
               </Button>
             </ListItem>
           );
         })}
-          <ListItem sx={{ justifyContent: "center" }}>
+        <ListItem sx={{ justifyContent: "center" }}>
           {dicList.length != 0 ? (
             <Button
               style={{ textTransform: "none" }}
               variant="contained"
-              onClick={() => {}}
+              onClick={handleClickAddAll}
             >
               Add all
             </Button>
-        ) : "fetching..."}
-          </ListItem>
+          ) : (
+            "fetching..."
+          )}
+        </ListItem>
       </List>
     </Dialog>
   );
@@ -370,10 +402,30 @@ export default function MyLists() {
     setOpenDialogNewList(false);
   }
   function handleCloseDialogAddNewWord() {
+    resetAddWordForm();
     setOpenDialogAddWord(false);
   }
   function handleCloseDialogFetch() {
     setOpenDialogFetch(false);
+  }
+  function handleClickFetchedOption(dic: Dictionary) {
+    //handleClickAddWord(dic);
+    handleCloseDialogFetch();
+    setAddWordDef(dic.definition);
+    setAddWordPart(dic.part);
+    setAddWordTitle(dic.title);
+  }
+  function handleClickAllFetched(dics: Dictionary[]) {
+    handleCloseDialogFetch();
+    handleCloseDialogAddNewWord();
+    dics.forEach((d) => {
+      handleClickAddWord(d);
+    });
+  }
+  function resetAddWordForm(){
+    setAddWordDef("");
+    setAddWordPart("");
+    setAddWordTitle("");
   }
 
   const displayTable =
@@ -418,6 +470,8 @@ export default function MyLists() {
         onClose={handleCloseDialogFetch}
         wordTitle={addWordTitle}
         wordPart={addWordPart}
+        handleClickFetchedOption={handleClickFetchedOption}
+        handleClickAllFetched={handleClickAllFetched}
       />
       <Stack
         spacing={2}

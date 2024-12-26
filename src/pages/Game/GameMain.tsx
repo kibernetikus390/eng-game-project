@@ -43,7 +43,8 @@ export default function GameMain(props:GameMainProps){
                     variant="subtitle1"
                     key={i}
                     align={"left"}
-                    onClick={() => {
+                    onClick={(e) => {
+                        e.preventDefault();
                         props.memHandleClickOption(i);
                     }}
                     sx={{

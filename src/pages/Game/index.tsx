@@ -12,6 +12,7 @@ import fetchOneRandomWord from "./methods/fetchOneRandomWord.ts";
 import fetchRandomWords from "./methods/fetchRandomWords.ts";
 import generateQuizSet from "./methods/generateQuizSet.ts";
 import handleClickStart from "./methods/handleClickStart.ts";
+import generateOptions from "./methods/generateOptions.ts";
 import GameStart from "./GameStart.tsx";
 import GameResult from "./GameResult.tsx";
 import GameMain from "./GameMain.tsx";
@@ -70,18 +71,18 @@ function Game() {
   let maxQuiz = 50;
 
   // 出題元の選択が有効かチェック
-  (function checkQuizSourceValue(){
+  (function checkQuizSourceValue() {
     let invalid = false;
-    Object.keys(dictionaries).map((v,_)=>{
-      if(invalid) return;
-      if(v==quizSource && getLength(v) == 0){
+    Object.keys(dictionaries).map((v, _) => {
+      if (invalid) return;
+      if (v == quizSource && getLength(v) == 0) {
         invalid = true;
       }
     });
-    if(invalid){
+    if (invalid) {
       console.log("INVALID QUIZSOURCE");
       setQuizSource("Random");
-    } 
+    }
   })();
 
   // 出題数が有効かチェック
@@ -112,10 +113,33 @@ function Game() {
       setIsJudge,
     );
   }
-  
+
   // スタートボタンのクリックイベント
-  async function memHandleClickStart(num:number, source:string){
-    return handleClickStart(num,source,abortControllerRef,numExtraQuizSet,generateQuizSet,dictionaries,fetchRandomWords,addQuizCache,fetchWiktionary,fetchOneRandomWord,getDefinition,reload,setAbort,setIsJudge,setIsLoading,setLoadingCounter,setQuizSet,setExtraSet,setIsPlaying,setGameIndex,setTfTable,initTfTable);
+  async function memHandleClickStart(num: number, source: string) {
+    return handleClickStart(
+      num,
+      source,
+      abortControllerRef,
+      numExtraQuizSet,
+      generateQuizSet,
+      dictionaries,
+      fetchRandomWords,
+      addQuizCache,
+      fetchWiktionary,
+      fetchOneRandomWord,
+      getDefinition,
+      reload,
+      setAbort,
+      setIsJudge,
+      setIsLoading,
+      setLoadingCounter,
+      setQuizSet,
+      setExtraSet,
+      setIsPlaying,
+      setGameIndex,
+      setTfTable,
+      initTfTable,
+    );
   }
 
   // ゲーム進行時イベント 選択肢を生成する
@@ -123,28 +147,13 @@ function Game() {
     if (gameIndex == -1 || isResult || gameIndex >= quizSet.length) {
       return;
     }
-    // 選択肢を生成
-    const allSet: Dictionary[] = [...quizSet, ...extraSet];
-    const newOptions: Dictionary[] = [];
-    for (let i = 0; i < 4; i++) {
-      newOptions.push(
-        allSet.splice(Math.floor(Math.random() * allSet.length), 1)[0],
-      );
-    }
-    // 正答を挿入
-    let ansIndex = newOptions.findIndex(
-      (e) => e.title == quizSet[gameIndex].title,
+    generateOptions(
+      quizSet,
+      extraSet,
+      gameIndex,
+      setCorrectOptionIndex,
+      setOptions,
     );
-    if (ansIndex == -1) {
-      ansIndex = Math.floor(Math.random() * 4);
-      newOptions[ansIndex] = quizSet[gameIndex];
-      setCorrectOptionIndex(ansIndex);
-    } else {
-      setCorrectOptionIndex(ansIndex);
-    }
-    console.log(newOptions);
-    // console.log("ans: " + ansIndex);
-    setOptions(newOptions);
   }, [gameIndex, quizSet, extraSet, isResult]);
 
   // クリックイベント スタート画面に戻る
@@ -206,7 +215,7 @@ function Game() {
   };
 
   // navBarでHomeをクリック->スタート画面に戻る
-  useEffect(()=>{
+  useEffect(() => {
     if (abort == true) {
       handleAbort();
       setIsLoading(false);
@@ -216,14 +225,19 @@ function Game() {
       setNumWords(10);
       setAbort(false);
     }
-  },[abort]);
+  }, [abort]);
 
-  if(abort){
+  if (abort) {
     return;
   }
 
   return (
-    <Container sx={{ height: "100%" }}>
+    <Container
+      sx={{ height: "100%" }}
+      onClick={() => {
+        memHandleClickOption(-1);
+      }}
+    >
       {isLoading ? (
         <GameLoading
           loadingCounter={loadingCounter}

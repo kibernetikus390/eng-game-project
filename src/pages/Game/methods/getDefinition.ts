@@ -23,9 +23,10 @@ export default function getDefinition(
   let partsToSearch: string[] = [];
   if (part == "Random") {
     
-    while (partsList.length > 0) {
+    const parts = [...partsList];
+    while (parts.length > 0) {
       partsToSearch.push(
-        partsList.splice(Math.floor(Math.random() * partsList.length), 1)[0],
+        parts.splice(Math.floor(Math.random() * parts.length), 1)[0],
       );
     }
   } else {

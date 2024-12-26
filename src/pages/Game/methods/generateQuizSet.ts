@@ -59,7 +59,6 @@ export default async function generateQuizSet(
           fetchedWords[i],
           abortControllerRef.current.signal,
         );
-        // console.log(doc);
       } catch {
         // ランダムに1つ取得しなおす
         fetchedWords[i] = await fetchOneRandomWord(fetchedWords, fetchRandomWords);
@@ -81,7 +80,7 @@ export default async function generateQuizSet(
         addQuizCache(newQuiz);
       }
       // ローディング進捗表示用のカウンター
-      (setCounter as React.Dispatch<React.SetStateAction<number>>)(
+      setCounter(
         (prev) => prev + 1,
       );
     }
