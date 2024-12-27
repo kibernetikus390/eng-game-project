@@ -14,6 +14,7 @@ import History from "./pages/History/index.tsx";
 import { AbortContextProvider } from "./providers/AbortContextProvider.tsx";
 
 function ENGGameRoutes() {
+  console.log(import.meta.env.BASE_URL);
   return (
     <Router>
       <Routes>
