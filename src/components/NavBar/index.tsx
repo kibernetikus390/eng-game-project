@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ThemeContext } from "../../contexts/Theme";
 import classes from "./index.module.css";
 
@@ -9,7 +9,7 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 import { AbortContext } from "../../contexts/AbortContext";
 
 function NavBar(props: React.PropsWithChildren) {
-  const { abort, setAbort } = useContext(AbortContext);
+  const { setAbort } = useContext(AbortContext);
   const { theme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
 

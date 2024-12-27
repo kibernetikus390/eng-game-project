@@ -22,7 +22,7 @@ import {
 import { DictionaryContext } from "../../contexts/DictionaryContext";
 import { KEY_NIGATE_LIST } from "../../providers/DictionaryContextProvider";
 import { Dictionary } from "../Game";
-import fetchWiktionary from "../Game/methods/fetchWiktionary";
+import fetchWiktionary from "../../util/fetchWiktionary";
 import getDefinition from "../Game/methods/getDefinition";
 import { partsList } from "../Game/methods/getDefinition";
 
@@ -63,7 +63,7 @@ function DialogFetchFromWiktionary(props: DialogFetchProps) {
   async function fetch() {
     abortControllerRef.current = new AbortController();
     try {
-      const part = partsList.includes(props.wordPart) ? props.wordPart : "All";
+      // const part = partsList.includes(props.wordPart) ? props.wordPart : "All";
       const doc: Document = await fetchWiktionary(
         props.wordTitle,
         abortControllerRef.current.signal,
@@ -82,7 +82,7 @@ function DialogFetchFromWiktionary(props: DialogFetchProps) {
         }
       } else {
         // 全ての品詞を取得
-        for (let part of partsList) {
+        for (const part of partsList) {
           const dict: Dictionary = getDefinition(doc, props.wordTitle, part);
           if (dict.definition.trim() != "") {
             console.log(dict);

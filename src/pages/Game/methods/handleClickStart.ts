@@ -2,11 +2,11 @@ import { Dictionary, VITE_USE_LS_QUIZ } from "..";
 import { DictionariesType } from "../../../contexts/DictionaryContext";
 import generateQuizSetType from "./generateQuizSet";
 import getDefinitionType from "./getDefinition";
-import fetchRandomWordsType from "./fetchRandomWords";
+import fetchRandomWordsType from "../../../util/fetchRandomWords";
 import addQuizCacheType from "./addQuizCache";
-import fetchWiktionaryType from "./fetchWiktionary";
+import fetchWiktionaryType from "../../../util/fetchWiktionary";
 import initTfTableType from "./initTfTable";
-import fetchOneRandomWordType from "./fetchOneRandomWord";
+import fetchOneRandomWordType from "../../../util/fetchOneRandomWord";
 
   // スタートボタンのクリックイベント
 export default  async function handleClickStart(

@@ -2,10 +2,10 @@ import { Dictionary } from "..";
 import { VITE_ADD_LS_QUIZ } from "..";
 import { DictionariesType } from "../../../contexts/DictionaryContext";
 import getDefinitionType from "./getDefinition";
-import fetchRandomWordsType from "./fetchRandomWords";
+import fetchRandomWordsType from "../../../util/fetchRandomWords";
 import addQuizCacheType from "./addQuizCache";
-import fetchWiktionaryType from "./fetchWiktionary";
-import fetchOneRandomWordType from "./fetchOneRandomWord";
+import fetchWiktionaryType from "../../../util/fetchWiktionary";
+import fetchOneRandomWordType from "../../../util/fetchOneRandomWord";
 
 // 問題セットを生成
 export default async function generateQuizSet(

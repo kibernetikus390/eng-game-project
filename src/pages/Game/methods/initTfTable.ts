@@ -1,5 +1,3 @@
-import React from "react";
-
 // 正誤表を初期化
 export default function initTfTable(
   num: number,

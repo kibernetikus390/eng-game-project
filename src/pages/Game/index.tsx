@@ -1,15 +1,17 @@
 import { useEffect, useState, useContext, useRef } from "react";
-import { ThemeContext } from "../../contexts/Theme/index.tsx";
+import { useNavigate } from "react-router-dom";
 import { Container } from "@mui/material";
+import { AbortContext } from "../../contexts/AbortContext/index.ts";
+import { ThemeContext } from "../../contexts/Theme/index.tsx";
 import { DictionaryContext } from "../../contexts/DictionaryContext/index.ts";
 import { HistoryContext } from "../../contexts/HistoryContext/index.tsx";
 import handleClickOption from "./methods/handleClickOption.ts";
-import fetchWiktionary from "./methods/fetchWiktionary.ts";
+import fetchWiktionary from "../../util/fetchWiktionary.ts";
 import getDefinition from "./methods/getDefinition.ts";
 import initTfTable from "./methods/initTfTable.ts";
 import addQuizCache from "./methods/addQuizCache.ts";
-import fetchOneRandomWord from "./methods/fetchOneRandomWord.ts";
-import fetchRandomWords from "./methods/fetchRandomWords.ts";
+import fetchOneRandomWord from "../../util/fetchOneRandomWord.ts";
+import fetchRandomWords from "../../util/fetchRandomWords.ts";
 import generateQuizSet from "./methods/generateQuizSet.ts";
 import handleClickStart from "./methods/handleClickStart.ts";
 import generateOptions from "./methods/generateOptions.ts";
@@ -17,8 +19,6 @@ import GameStart from "./GameStart.tsx";
 import GameResult from "./GameResult.tsx";
 import GameMain from "./GameMain.tsx";
 import GameLoading from "./GameLoading.tsx";
-import { AbortContext } from "../../contexts/AbortContext/index.ts";
-import { useNavigate } from "react-router-dom";
 
 // 問題をWebAPIからフェッチ時、ローカルストレージにキャッシュする
 export const VITE_ADD_LS_QUIZ: boolean = false;
@@ -73,7 +73,7 @@ function Game() {
   // 出題元の選択が有効かチェック
   (function checkQuizSourceValue() {
     let invalid = false;
-    Object.keys(dictionaries).map((v, _) => {
+    Object.keys(dictionaries).map((v) => {
       if (invalid) return;
       if (v == quizSource && getLength(v) == 0) {
         invalid = true;
