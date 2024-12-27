@@ -9,7 +9,6 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 import { AbortContext } from "../../contexts/AbortContext";
 
 function NavBar(props: React.PropsWithChildren) {
-  console.log(import.meta.env.BASE_URL);
   const { setAbort } = useContext(AbortContext);
   const { theme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
