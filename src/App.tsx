@@ -14,12 +14,11 @@ import History from "./pages/History/index.tsx";
 import { AbortContextProvider } from "./providers/AbortContextProvider.tsx";
 
 function ENGGameRoutes() {
-  console.log(import.meta.env.BASE_URL);
   return (
     <Router>
       <Routes>
         <Route
-          path="/"
+          path={import.meta.env.BASE_URL}
           element={
             <NavBar>
               <GameMain />
@@ -27,16 +26,16 @@ function ENGGameRoutes() {
           }
         />
         <Route
-          path="/mylists"
+          path={import.meta.env.BASE_URL+ "mylists"}
           element={
             <NavBar>
               <MyLists />
             </NavBar>
           }
         />
-        <Route path="/history" element={<NavBar><History/></NavBar>}/>
-        <Route path="/testWik" element={<TestWiktionary />} />
-        <Route path="/testRando" element={<TestRando />} />
+        <Route path={import.meta.env.BASE_URL+ "history"} element={<NavBar><History/></NavBar>}/>
+        <Route path={import.meta.env.BASE_URL+ "testWik"} element={<TestWiktionary />} />
+        <Route path={import.meta.env.BASE_URL+ "testRando"} element={<TestRando />} />
       </Routes>
     </Router>
   );
