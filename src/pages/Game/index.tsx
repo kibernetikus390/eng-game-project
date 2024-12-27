@@ -199,7 +199,7 @@ function Game() {
   // リロード
   function reload() {
     // window.location.reload();
-    navigate("/");
+    navigate(import.meta.env.BASE_URL);
     setAbort(true);
   }
 

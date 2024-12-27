@@ -37,7 +37,7 @@ function NavBar(props: React.PropsWithChildren) {
             style={{ textTransform: "none" }}
             sx={{ color: "white", borderColor: "white" }}
             onClick={() => {
-              navigate("/");
+              navigate(import.meta.env.BASE_URL);
               setAbort(true);
             }}
           >
@@ -48,7 +48,7 @@ function NavBar(props: React.PropsWithChildren) {
             style={{ textTransform: "none" }}
             sx={{ color: "white", borderColor: "white" }}
             onClick={() => {
-              navigate("/mylists");
+              navigate(import.meta.env.BASE_URL+"mylists");
             }}
           >
             My lists
@@ -58,7 +58,7 @@ function NavBar(props: React.PropsWithChildren) {
             style={{ textTransform: "none" }}
             sx={{ color: "white", borderColor: "white" }}
             onClick={() => {
-              navigate("/history");
+              navigate(import.meta.env.BASE_URL+"history");
             }}
           >
             History
